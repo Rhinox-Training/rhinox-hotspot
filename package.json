@@ -1,0 +1,27 @@
+{
+  "name": "com.rhinox.open.hotspot",
+  "displayName": "Hotspot - Graphical debugger",
+  "version": "0.1.0",
+  "unity": "2019.4",
+  "description": "Tool for debugging graphical issues in Unity projects.",
+  "keywords": [
+    "unity",
+    "editor"
+  ],
+  "category": "Unity",
+  "dependencies": {
+    "com.rhinox.open.utilities": "1.5.4",
+	"com.rhinox.open.guiutils": "2.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rhinox-Training/rhinox-hotspot.git"
+  },
+  "author": "Rhinox",
+  "license": "Apache V.2",
+  "bugs": {
+    "url": "https://github.com/Rhinox-Training/rhinox-hotspot/issues"
+  },
+  "homepage": "https://github.com/Rhinox-Training/rhinox-hotspot#readme",
+  "type": "library"
+}
