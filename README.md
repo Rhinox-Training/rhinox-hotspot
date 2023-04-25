@@ -1,4 +1,4 @@
-# rhinox-hotspot
+# Hotspot
 
 # License
 
