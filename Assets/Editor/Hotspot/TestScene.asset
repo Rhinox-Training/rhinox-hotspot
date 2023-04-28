@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ac0c0afbf8a4dda80a1ab0c16a13171, type: 3}
+  m_Name: TestScene
+  m_EditorClassIdentifier: 
+  Scene:
+    sceneGuid: 306d6db5b6cc0704d94aecd3792fd7b9
+    scenePath: Assets/TestS/TestScene.unity
+  Entries:
+  - rid: 8235480153647480839
+  - rid: 8235480153647480840
+  references:
+    version: 2
+    RefIds:
+    - rid: 8235480153647480839
+      type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        Name: 
+        Duration: 4.3
+        CameraPose:
+          position: {x: 13.418335, y: 12.54343, z: -4.7667685}
+          rotation: {x: -0.16848235, y: 0.6050567, z: -0.13295996, w: -0.7667084}
+    - rid: 8235480153647480840
+      type: {class: MovingViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        Name: 
