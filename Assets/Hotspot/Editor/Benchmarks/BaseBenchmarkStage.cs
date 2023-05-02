@@ -13,18 +13,19 @@ namespace Hotspot.Editor
     {
         [Title("$_titleString"), PropertyOrder(-10)]
         public string Name;
-        private Camera _camera;
         private ManagedCoroutine _coroutine;
 
         private string _titleString => GetType().GetNiceName(false);
         
         [Range(0.0f, 30.0f)]
         public float Duration = 5.0f;
-        
+
+        private ICameraPoseApplier _cameraPoseApplier;
+
         public bool Completed { get; private set; }
         public bool Failed { get; private set; }
 
-        public bool RunStage(Camera camera, Action<float> progress = null)
+        public bool RunStage(ICameraPoseApplier cameraPoseApplier, Action<float> progress = null)
         {
             if (_coroutine != null)
             {
@@ -35,7 +36,7 @@ namespace Hotspot.Editor
             Completed = false;
             Failed = false;
             
-            _camera = camera;
+            _cameraPoseApplier = cameraPoseApplier;
             if (!ValidateInputs())
             {
                 PLog.Warn<HotspotLogger>($"Could not run entry {this}, inputs were invalid. Skipping...");
@@ -76,7 +77,7 @@ namespace Hotspot.Editor
 
         public virtual bool ValidateInputs()
         {
-            return _camera != null && Duration > 0.0f && Duration <= 30.0f;
+            return _cameraPoseApplier != null && Duration > 0.0f && Duration <= 30.0f;
         }
 
         private void TriggerFinished(bool failed, string reason = null)
@@ -94,14 +95,14 @@ namespace Hotspot.Editor
                 _coroutine.OnFinished -= OnFinishedCoroutine;
                 _coroutine = null;
             }
-            _camera = null;
+            _cameraPoseApplier = null;
         }
 
         protected abstract IEnumerator RunBenchmarkCoroutine(Action<float> progressCallback = null);
 
         protected virtual void ApplyPoseToCamera(Pose pose)
         {
-            _camera.transform.SetPositionAndRotation(pose.position, pose.rotation);
+            _cameraPoseApplier.ApplyPoseToCamera(pose);
         }
 
         public virtual void OnFinishedStage(bool failed)

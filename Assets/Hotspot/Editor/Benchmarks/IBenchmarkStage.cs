@@ -7,6 +7,6 @@ namespace Hotspot.Editor
     {
         bool Completed { get; }
         bool Failed { get; }
-        bool RunStage(Camera camera, Action<float> progressCallback = null);
+        bool RunStage(ICameraPoseApplier cameraPoseApplier, Action<float> progressCallback = null);
     }
 }

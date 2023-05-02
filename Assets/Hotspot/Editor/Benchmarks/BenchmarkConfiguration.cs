@@ -10,6 +10,7 @@ using UnityEngine;
 namespace Hotspot.Editor
 {
     [Serializable]
+    [SmartFallbackDrawn(false)]
     public class BenchmarkConfiguration : ScriptableObject
     {
         public SceneReferenceData Scene;
@@ -23,6 +24,7 @@ namespace Hotspot.Editor
         [SerializeReference]
         public List<IBenchmarkStage> Entries;
 
+        [ContextMenu("Force Generate")]
         private void OnPoseApplierTypeChanged()
         {
             if (PoseApplierType == null)
