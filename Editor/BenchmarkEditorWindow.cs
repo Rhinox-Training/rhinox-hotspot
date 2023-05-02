@@ -107,7 +107,7 @@ namespace Hotspot.Editor
             while (_currentStage != null)
             {
                 float stageProgress = 0.0f;
-                if (!_currentStage.RunStage(Camera.main, (progress) => { stageProgress = progress; }))
+                if (!_currentStage.RunStage(_benchmarkAsset.PoseApplier, (progress) => { stageProgress = progress; }))
                 {
                     PLog.Error<HotspotLogger>($"Benchmark stage {_currentStage} failed to start...");
                     yield break;
