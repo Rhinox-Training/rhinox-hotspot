@@ -3,6 +3,8 @@ using UnityEditor;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.Rendering;
+using Hotspot.Editor;
+using Rhinox.Lightspeed.Collections;
 
 #if UNITY_EDITOR
 using Rhinox.GUIUtils.Editor;
@@ -10,18 +12,33 @@ using Rhinox.GUIUtils.Editor;
 
 namespace Rhinox.Hotspot.Editor
 {
-    public class VertexCounter : MonoBehaviour
+    public class VertexCounter : CustomEditorWindow
     {
         //should later be exposed
-        public int _MaxVerticesPerCube = 4;
-        public float _minOctreeCubeSize = .1f;
+        private static int _MaxVerticesPerCube = 4;
+        private static float _minOctreeCubeSize = .1f;
 
         private float _biggest = 0f;
         private Octree _tree = null;
 
+        private List<KeyValuePair<int, Vector3>> _hotList = new List<KeyValuePair<int, Vector3>>();
+        private Vector2 _scrollPos = Vector2.zero;
+
         //[MenuItem("Tools/Vertex Counter", false, 1)]
-        [ContextMenu("Make Octree")]
-        public void ShowVertexCount()
+        //[ContextMenu("Make Octree")]
+        [MenuItem(HotspotWindowHelper.ANALYSIS_PREFIX + "Vertex Density Visualizer", false, 1500)]
+        public static void ShowWindow()
+        {
+            var win = GetWindow(typeof(VertexCounter));
+            win.titleContent = new GUIContent("Vertex Density Visualizer");
+        }
+
+        //protected override void Initialize()
+        //{
+        //base.Initialize();
+        //}
+
+        private void VisualizeVertices()
         {
             //FindObjectsOfType is only loaded and active
             //FindObjectsOfTypeAll also includes non-active
@@ -50,8 +67,45 @@ namespace Rhinox.Hotspot.Editor
                 }
             }
 
-            Debug.Log(filters.Length);
-            Debug.Log("I EXIST \\._./");
+            DrawChildren(_tree);
+
+
+            //var myList = occurenceList.ToList();
+            //myList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
+
+            _hotList.Sort((pair1, pair2) => pair2.Key.CompareTo(pair1.Key));
+        }
+
+        protected override void OnGUI()
+        {
+            base.OnGUI();
+
+            //GUILayout.BeginArea();
+            _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(50f));
+            foreach (var item in _hotList)
+            {
+                GUILayout.Label($"{item.Key}: {item.Value}");
+            }
+            GUILayout.EndScrollView();
+            //GUILayout.EndArea();
+            GUILayout.Space(15f);
+
+            GUILayout.BeginVertical();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Max vertices per cube:");
+            int.TryParse(GUILayout.TextField($"{_MaxVerticesPerCube}", GUILayout.ExpandWidth(true)), out _MaxVerticesPerCube);
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Min cube size:");
+            float.TryParse(GUILayout.TextField($"{_minOctreeCubeSize}", GUILayout.ExpandWidth(true)), out _minOctreeCubeSize);
+            GUILayout.EndHorizontal();
+
+            if (GUILayout.Button("Calculate and visualize"))
+                VisualizeVertices();
+
+            GUILayout.EndVertical();
         }
 
         [DrawGizmo(GizmoType.Active)]
@@ -65,7 +119,8 @@ namespace Rhinox.Hotspot.Editor
                     {
                         //maybe add list of super bad locations that you can click on
                         Handles.Label(tree._bounds.center, $"{tree.VertexCount}");
-                        Gizmos.DrawWireCube(tree._bounds.center, tree._bounds.size);
+                        //Gizmos.DrawWireCube(tree._bounds.center, tree._bounds.size);
+                        _hotList.Add(new KeyValuePair<int, Vector3>(tree.VertexCount, tree._bounds.center));
                     }
                 }
 
@@ -86,84 +141,6 @@ namespace Rhinox.Hotspot.Editor
             DrawChildren(_tree);
         }
 
-        private void DrawWireCubeWithDebug(Vector3 center, Vector3 size, float duration)
-        {
-            var halfSize = size * 0.5f;
-
-            Color color = Color.Lerp(Color.red, Color.cyan, size.x / _biggest);
-
-            Vector3 p1 = center + new Vector3(-halfSize.x, halfSize.y, -halfSize.z);
-            Vector3 p2 = center + new Vector3(halfSize.x, halfSize.y, -halfSize.z);
-            Vector3 p3 = center + new Vector3(-halfSize.x, -halfSize.y, -halfSize.z);
-            Vector3 p4 = center + new Vector3(halfSize.x, -halfSize.y, -halfSize.z);
-
-            // Front top line
-            Debug.DrawLine(p1, p2, color, duration);
-
-            // Front bottom line
-            Debug.DrawLine(p3, p4, color, duration);
-
-            // Front left line
-            Debug.DrawLine(p1, p3, color, duration);
-
-            // Front right line
-            Debug.DrawLine(p2, p4, color, duration);
-
-
-            Vector3 p5 = center + new Vector3(-halfSize.x, halfSize.y, halfSize.z);
-            Vector3 p6 = center + new Vector3(halfSize.x, halfSize.y, halfSize.z);
-            Vector3 p7 = center + new Vector3(-halfSize.x, -halfSize.y, halfSize.z);
-            Vector3 p8 = center + new Vector3(halfSize.x, -halfSize.y, halfSize.z);
-
-            // Back top line
-            Debug.DrawLine(p5, p6, color, duration);
-
-            // Back bottom line
-            Debug.DrawLine(p7, p8, color, duration);
-
-            // Back left line
-            Debug.DrawLine(p5, p7, color, duration);
-
-            // Back right line
-            Debug.DrawLine(p6, p8, color, duration);
-
-            // Connect front and back lines
-            Debug.DrawLine(p1, p5, color, duration);
-            Debug.DrawLine(p2, p6, color, duration);
-            Debug.DrawLine(p3, p7, color, duration);
-            Debug.DrawLine(p4, p8, color, duration);
-        }
-
-        void DrawBounds(Bounds b, float duration = 0)
-        {
-            // bottom
-            var p1 = new Vector3(b.center.x - b.extents.x, b.center.y - b.extents.y, b.center.z - b.extents.z);
-            var p2 = new Vector3(b.center.x + b.extents.x, b.center.y - b.extents.y, b.center.z - b.extents.z);
-            var p3 = new Vector3(b.center.x + b.extents.x, b.center.y - b.extents.y, b.center.z + b.extents.z);
-            var p4 = new Vector3(b.center.x - b.extents.x, b.center.y - b.extents.y, b.center.z + b.extents.z);
-
-            Debug.DrawLine(p1, p2, Color.blue, duration);
-            Debug.DrawLine(p2, p3, Color.red, duration);
-            Debug.DrawLine(p3, p4, Color.yellow, duration);
-            Debug.DrawLine(p4, p1, Color.magenta, duration);
-
-            // top
-            var p5 = new Vector3(b.center.x - b.extents.x, b.center.y + b.extents.y, b.center.z - b.extents.z);
-            var p6 = new Vector3(b.center.x + b.extents.x, b.center.y + b.extents.y, b.center.z - b.extents.z);
-            var p7 = new Vector3(b.center.x + b.extents.x, b.center.y + b.extents.y, b.center.z + b.extents.z);
-            var p8 = new Vector3(b.center.x - b.extents.x, b.center.y + b.extents.y, b.center.z + b.extents.z);
-
-            Debug.DrawLine(p5, p6, Color.blue, duration);
-            Debug.DrawLine(p6, p7, Color.red, duration);
-            Debug.DrawLine(p7, p8, Color.yellow, duration);
-            Debug.DrawLine(p8, p5, Color.magenta, duration);
-
-            // sides
-            Debug.DrawLine(p1, p5, Color.white, duration);
-            Debug.DrawLine(p2, p6, Color.gray, duration);
-            Debug.DrawLine(p3, p7, Color.green, duration);
-            Debug.DrawLine(p4, p8, Color.cyan, duration);
-        }
     }
 
     public class Octree

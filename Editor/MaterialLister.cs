@@ -35,9 +35,9 @@ namespace Rhinox.Hotspot.Editor
             {
                 Debug.Log(item.ToString());
             }
+
+
             //var sortedDict = from pair in occurenceList orderby pair.Value ascending select pair.Value;
-
-
 
         }
     }
