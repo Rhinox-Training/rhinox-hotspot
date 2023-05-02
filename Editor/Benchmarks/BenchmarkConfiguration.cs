@@ -14,18 +14,24 @@ namespace Hotspot.Editor
     {
         public SceneReferenceData Scene;
 
-        [SerializeReference, AssignableTypeFilter]
+        [AssignableTypeFilter(typeof(ICameraPoseApplier)), SerializeField, OnValueChanged(nameof(OnPoseApplierTypeChanged))]
+        public SerializableType PoseApplierType;
+        
+        [SerializeReference, HideInInspector]
         public ICameraPoseApplier PoseApplier;
 
         [SerializeReference]
         public List<IBenchmarkStage> Entries;
 
-        private ValueDropdownItem[] GetPoseApplierOptions()
+        private void OnPoseApplierTypeChanged()
         {
-            var types = AppDomain.CurrentDomain.GetDefinedTypesOfType(typeof(ICameraPoseApplier));
-            return types
-                .Select(x => new ValueDropdownItem(x.GetNiceName(false), Activator.CreateInstance(x)))
-                .ToArray();
+            if (PoseApplierType == null)
+            {
+                PoseApplier = null;
+                return;
+            }
+            
+            PoseApplier = Activator.CreateInstance(PoseApplierType) as ICameraPoseApplier;
         }
     }
 }

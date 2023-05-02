@@ -31,7 +31,7 @@ namespace Hotspot.Editor
         private const string BENCHMARKS_FOLDER = "Assets/Editor/Hotspot";
 
 
-        [MenuItem("Window/Analysis/Hotspot/Benchmark Editor", false, 1500)]
+        [MenuItem(HotspotWindowHelper.ANALYSIS_PREFIX + "Benchmark Editor", false, 1500)]
         public static void ShowWindow()
         {
             var win = GetWindow(typeof(BenchmarkEditorWindow));
@@ -167,7 +167,7 @@ namespace Hotspot.Editor
             if (_dropdownField == null)
             {
                 var so = new SerializedObject(benchmarkAsset);
-                var property = so.FindProperty(nameof(BenchmarkConfiguration.PoseApplier));
+                var property = so.FindProperty(nameof(BenchmarkConfiguration.PoseApplierType));
                 _dropdownField = DrawableFactory.CreateDrawableFor(property);
             }
 
