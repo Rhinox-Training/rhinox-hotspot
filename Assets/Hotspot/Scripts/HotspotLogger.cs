@@ -1,6 +1,6 @@
 ﻿using Rhinox.Perceptor;
 
-namespace Hotspot.Scripts
+namespace Hotspot
 {
     public class HotspotLogger : CustomLogger
     {

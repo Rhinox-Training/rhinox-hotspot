@@ -15,21 +15,38 @@ MonoBehaviour:
   Scene:
     sceneGuid: 306d6db5b6cc0704d94aecd3792fd7b9
     scenePath: Assets/TestS/TestScene.unity
+  PoseApplier:
+    rid: 8235480174864629762
   Entries:
   - rid: 8235480153647480839
-  - rid: 8235480153647480840
+  - rid: 8235480174864629760
+  - rid: 8235480174864629761
   references:
     version: 2
     RefIds:
     - rid: 8235480153647480839
       type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
-        Name: 
-        Duration: 4.3
+        Name: Stage 1
+        Duration: 5
         CameraPose:
           position: {x: 13.418335, y: 12.54343, z: -4.7667685}
           rotation: {x: -0.16848235, y: 0.6050567, z: -0.13295996, w: -0.7667084}
-    - rid: 8235480153647480840
-      type: {class: MovingViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+    - rid: 8235480174864629760
+      type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
-        Name: 
+        Name: Stage 2
+        Duration: 3
+        CameraPose:
+          position: {x: 0, y: 0, z: 0}
+          rotation: {x: 0, y: 0, z: 0, w: 0}
+    - rid: 8235480174864629761
+      type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        Name: Stage 3
+        Duration: 2
+        CameraPose:
+          position: {x: 0, y: 0, z: 0}
+          rotation: {x: 0, y: 0, z: 0, w: 0}
+    - rid: 8235480174864629762
+      type: {class: MainCameraPoseApplier, ns: Hotspot, asm: com.rhinox.open.hotspot}

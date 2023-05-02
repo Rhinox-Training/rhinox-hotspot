@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Hotspot.Editor
 {
@@ -6,6 +7,6 @@ namespace Hotspot.Editor
     {
         bool Completed { get; }
         bool Failed { get; }
-        bool RunStage(Camera camera);
+        bool RunStage(Camera camera, Action<float> progressCallback = null);
     }
 }
