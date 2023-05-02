@@ -19,7 +19,7 @@ namespace Hotspot.Editor
         private string _titleString => GetType().GetNiceName(false);
         
         [Range(0.0f, 30.0f)]
-        public float Duration;
+        public float Duration = 5.0f;
         
         public bool Completed { get; private set; }
         public bool Failed { get; private set; }

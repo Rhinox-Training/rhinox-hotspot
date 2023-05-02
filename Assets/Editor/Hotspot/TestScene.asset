@@ -15,12 +15,16 @@ MonoBehaviour:
   Scene:
     sceneGuid: 306d6db5b6cc0704d94aecd3792fd7b9
     scenePath: Assets/TestS/TestScene.unity
+  PoseApplierType:
+    _assemblyName: com.rhinox.open.hotspot, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    _assemblyQualifiedName: Hotspot.MainCameraPoseApplier, com.rhinox.open.hotspot,
+      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    _name: MainCameraPoseApplier
   PoseApplier:
     rid: 8235480174864629762
   Entries:
   - rid: 8235480153647480839
-  - rid: 8235480174864629760
-  - rid: 8235480174864629761
+  - rid: 9169774196034633731
   references:
     version: 2
     RefIds:
@@ -32,21 +36,16 @@ MonoBehaviour:
         CameraPose:
           position: {x: 13.418335, y: 12.54343, z: -4.7667685}
           rotation: {x: -0.16848235, y: 0.6050567, z: -0.13295996, w: -0.7667084}
-    - rid: 8235480174864629760
-      type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
-      data:
-        Name: Stage 2
-        Duration: 3
-        CameraPose:
-          position: {x: 0, y: 0, z: 0}
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-    - rid: 8235480174864629761
-      type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
-      data:
-        Name: Stage 3
-        Duration: 2
-        CameraPose:
-          position: {x: 0, y: 0, z: 0}
-          rotation: {x: 0, y: 0, z: 0, w: 0}
     - rid: 8235480174864629762
       type: {class: MainCameraPoseApplier, ns: Hotspot, asm: com.rhinox.open.hotspot}
+    - rid: 9169774196034633731
+      type: {class: MovingViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        Name: Stage 2
+        Duration: 5
+        CameraStartPose:
+          position: {x: 4.037003, y: 2.6513653, z: -12.588297}
+          rotation: {x: -0.22077686, y: 0.18507184, z: -0.042710923, w: -0.9566514}
+        CameraEndPose:
+          position: {x: -2.6220036, y: -3.4266253, z: 3.834547}
+          rotation: {x: -0.108069435, y: 0.02295989, z: -0.0024962004, w: -0.99387515}

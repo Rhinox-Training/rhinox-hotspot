@@ -23,7 +23,6 @@ namespace Hotspot.Editor
             foreach (float increment in enumeration)
             {
                 progress += increment;
-                Debug.Log($"{this} - {progress} seconds {progress/Duration}");
                 progressCallback?.Invoke(progress / Duration);
                 yield return new WaitForSeconds(increment);
             }
