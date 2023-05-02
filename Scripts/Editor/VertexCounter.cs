@@ -3,7 +3,10 @@ using UnityEditor;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.Rendering;
-//using System;
+
+#if UNITY_EDITOR
+using Rhinox.GUIUtils.Editor;
+#endif
 
 namespace Rhinox.Hotspot.Editor
 {
@@ -25,77 +28,53 @@ namespace Rhinox.Hotspot.Editor
             var renderers = Object.FindObjectsOfType<MeshRenderer>();
             var filters = Object.FindObjectsOfType<MeshFilter>();
 
-            //Bounds sceneBound = new Bounds(Vector3.zero, Vector3.zero);
             if (renderers.Length == 0)
                 return;
 
-            Bounds sceneBound = renderers[0].bounds;//THIS I HORRIBLE I KNOW
-
+            Bounds sceneBound = new Bounds();
             foreach (MeshRenderer meshRenderer in renderers)
             {
                 sceneBound.Encapsulate(meshRenderer.bounds);
             }
 
             _biggest = Mathf.Max(Mathf.Max(sceneBound.size.x, sceneBound.size.y), sceneBound.size.z);
-            //sceneBound.size = new Vector3(_biggest * 1.1f, _biggest * 1.1f, _biggest * 1.1f);
             sceneBound.size = new Vector3(_biggest, _biggest, _biggest);
 
             _tree = new Octree(sceneBound, _MaxVerticesPerCube, _minOctreeCubeSize);
 
-            //List<Vector3> sceneVertices = new List<Vector3>();
             foreach (MeshFilter meshFilter in filters)
             {
-                //sceneVertices.AddRange(meshFilter.sharedMesh.vertices);
                 foreach (var point in meshFilter.sharedMesh.vertices)
                 {
-                    //sceneVertices.Add(meshFilter.gameObject.transform.TransformPoint(point));
                     _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point));
                 }
-
-                //foreach (var point in meshFilter.sharedMesh.vertices)
-                //{
-                //    _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point));
-                //    //tree.Insert(point + meshFilter.gameObject.transform.position);
-                //}
             }
-
-            //StartCoroutine(AddVertices(sceneVertices));
-
-            //DrawChildren(_tree, 30f);
 
             Debug.Log(filters.Length);
             Debug.Log("I EXIST \\._./");
         }
 
-        //IEnumerator AddVertices(List<Vector3> vertices)
-        //{
-        //    foreach (Vector3 v in vertices)
-        //    {
-        //        Debug.Log("ADD");
-        //        _tree.Insert(v);
-
-        //        yield return new WaitForSecondsRealtime(.25f);
-        //    }
-        //}
-
-        void DrawChildren(Octree tree, int index)
+        [DrawGizmo(GizmoType.Active)]
+        void DrawChildren(Octree tree)
         {
-            //DrawBounds(tree._bounds, duration);
-
             if (tree.children == null)
             {
                 if (tree.VertexCount > _MaxVerticesPerCube)
-                    Handles.Label(tree._bounds.center, $"{index}: {tree.VertexCount}");
+                {
+                    using (new eUtility.GizmoColor(Color.Lerp(Color.white, Color.red, (tree.VertexCount - _MaxVerticesPerCube) / (_MaxVerticesPerCube * 10f))))
+                    {
+                        //maybe add list of super bad locations that you can click on
+                        Handles.Label(tree._bounds.center, $"{tree.VertexCount}");
+                        Gizmos.DrawWireCube(tree._bounds.center, tree._bounds.size);
+                    }
+                }
 
-                Gizmos.DrawWireCube(tree._bounds.center, tree._bounds.size);
                 return;
             }
 
-            int cnt = 0;
             foreach (var child in tree.children)
             {
-                DrawChildren(child, cnt);
-                cnt++;
+                DrawChildren(child);
             }
         }
 
@@ -104,7 +83,7 @@ namespace Rhinox.Hotspot.Editor
             if (_tree == null)
                 return;
 
-            DrawChildren(_tree, 0);
+            DrawChildren(_tree);
         }
 
         private void DrawWireCubeWithDebug(Vector3 center, Vector3 size, float duration)
@@ -187,9 +166,6 @@ namespace Rhinox.Hotspot.Editor
         }
     }
 
-
-
-
     public class Octree
     {
         private readonly float _minSize;
@@ -222,25 +198,25 @@ namespace Rhinox.Hotspot.Editor
 
             if (_vertices.Count > _maxPoints && _bounds.size.x > _minSize)
             {
-                Split();
+                Split(_minSize);
             }
         }
 
-        private void Split()
+        private void Split(float minSize)
         {
             children = new Octree[8];
 
             float childSize = _bounds.size.x / 2f;
             float offset = _bounds.size.x / 4f;
 
-            children[0] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints);
-            children[1] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints);
-            children[2] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints);
-            children[3] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints);
-            children[4] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints);
-            children[5] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints);
-            children[6] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints);
-            children[7] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints);
+            children[0] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            children[1] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            children[2] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            children[3] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            children[4] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            children[5] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            children[6] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            children[7] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
 
             for (int i = _vertices.Count - 1; i >= 0; i--)
             {
@@ -255,22 +231,13 @@ namespace Rhinox.Hotspot.Editor
             int index = 0;
 
             if (point.x > _bounds.center.x)
-            {
-                //index |= 4;
                 index |= 1;
-            }
 
             if (point.y > _bounds.center.y)
-            {
-                //index |= 2;
                 index |= 4;
-            }
 
             if (point.z > _bounds.center.z)
-            {
-                //index |= 1;
                 index |= 2;
-            }
 
             return index;
         }
