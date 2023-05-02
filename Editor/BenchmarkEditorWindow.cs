@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Hotspot.Scripts;
 using Rhinox.GUIUtils;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.GUIUtils.Attributes;
@@ -28,6 +27,7 @@ namespace Hotspot.Editor
         private float _benchmarkProgress;
         private bool _benchmarkRunning;
         private IBenchmarkStage _currentStage;
+        private IOrderedDrawable _dropdownField;
         private const string BENCHMARKS_FOLDER = "Assets/Editor/Hotspot";
 
 
@@ -68,6 +68,8 @@ namespace Hotspot.Editor
             }
             else
             {
+                if (!Application.isPlaying && _benchmarkRunning)
+                    _benchmarkRunning = false;
                 using (new eUtility.DisabledGroup(_benchmarkRunning))
                     DrawBenchmarkEditor(_benchmarkAsset);
             }
@@ -101,20 +103,25 @@ namespace Hotspot.Editor
             int index = 0;
             _currentStage = _benchmarkAsset.Entries[index];
 
+            float incrementSize = 1.0f / (float)count;
             while (_currentStage != null)
             {
-                if (!_currentStage.RunStage(Camera.main))
+                float stageProgress = 0.0f;
+                if (!_currentStage.RunStage(Camera.main, (progress) => { stageProgress = progress; }))
                 {
                     PLog.Error<HotspotLogger>($"Benchmark stage {_currentStage} failed to start...");
                     yield break;
                 }
 
-                float progress = (float)(index + 1) / count;
-                _benchmarkProgress = progress;
+                _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
                 
                 yield return null;
                 while (!_currentStage.Completed)
+                {
+                    _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
+                    Repaint();
                     yield return null;
+                }
 
                 if (_currentStage.Failed)
                 {
@@ -128,6 +135,7 @@ namespace Hotspot.Editor
                     _currentStage = null;
             }
 
+            _benchmarkProgress = 1.0f;
             _benchmarkRunning = false;
         }
 
@@ -152,13 +160,20 @@ namespace Hotspot.Editor
             if (_listDrawable == null)
             {
                 var so = new SerializedObject(benchmarkAsset);
-
                 var property = so.FindProperty(nameof(BenchmarkConfiguration.Entries));
                 _listDrawable = DrawableFactory.CreateDrawableFor(property);
             }
 
+            if (_dropdownField == null)
+            {
+                var so = new SerializedObject(benchmarkAsset);
+                var property = so.FindProperty(nameof(BenchmarkConfiguration.PoseApplier));
+                _dropdownField = DrawableFactory.CreateDrawableFor(property);
+            }
+
             using (new eUtility.PaddedGUIScope(CustomGUIUtility.Padding * 2.0f))
             {
+                _dropdownField.Draw(GUIContentHelper.TempContent("PoseApplier"));
                 _listDrawable.Draw(GUIContent.none);
             }
         }

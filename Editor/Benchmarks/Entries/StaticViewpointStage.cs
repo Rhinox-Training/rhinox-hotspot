@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Rhinox.GUIUtils.Attributes;
 using Rhinox.Lightspeed;
 using Sirenix.OdinInspector;
@@ -11,23 +12,21 @@ namespace Hotspot.Editor
 {
     public class StaticViewpointStage : BaseBenchmarkStage
     {
-        [Range(0.0f, 30.0f)]
-        public float Duration;
-        
         [ForceWideMode]
         public Pose CameraPose;
 
-        public override bool ValidateInputs()
-        {
-            if (!base.ValidateInputs())
-                return false;
-            return Duration > 0.0f && Duration <= 30.0f;
-        }
-
-        protected override IEnumerator RunBenchmarkCoroutine()
+        protected override IEnumerator RunBenchmarkCoroutine(Action<float> progressCallback = null)
         {
             ApplyPoseToCamera(CameraPose);
-            yield return new WaitForSeconds(Duration);
+            float progress = 0.0f;
+            var enumeration = SplitByIncrement(Duration).Enumerate();
+            foreach (float increment in enumeration)
+            {
+                progress += increment;
+                Debug.Log($"{this} - {progress} seconds {progress/Duration}");
+                progressCallback?.Invoke(progress / Duration);
+                yield return new WaitForSeconds(increment);
+            }
         }
 
         [ButtonGroup, Button, EnableIf(nameof(_shouldEnableAlignWithViewButton))]
