@@ -56,13 +56,15 @@ namespace Hotspot.Editor
                 _shaderOccurrence = materials.GroupBy(x => x.shader.name).Select(x => new KeyValuePair<string, int>(x.Key, x.Count()));
             }
 
-
-            _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(50f));
-            foreach (var item in _shaderOccurrence)
+            if (_shaderOccurrence != null)
             {
-                GUILayout.Label($"{item.Key}: {item.Value}");
+                _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(50f));
+                foreach (var item in _shaderOccurrence)
+                {
+                    GUILayout.Label($"{item.Key}: {item.Value}");
+                }
+                GUILayout.EndScrollView();
             }
-            GUILayout.EndScrollView();
         }
     }
 }
