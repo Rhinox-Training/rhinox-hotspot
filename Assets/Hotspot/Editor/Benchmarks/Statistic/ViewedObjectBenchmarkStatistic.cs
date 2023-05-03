@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hotspot.Editor
@@ -26,10 +27,12 @@ namespace Hotspot.Editor
             }
         }
 
-        private void OnVisibleObjectsChanged(RenderedObjectTracker sender, ICollection<Renderer> visiblerenderers)
+        private void OnVisibleObjectsChanged(RenderedObjectTracker sender, ICollection<Renderer> visibleRenderers)
         {
-            throw new System.NotImplementedException();
+            HandleObjectsChanged(visibleRenderers ?? Array.Empty<Renderer>());
         }
+
+        protected abstract void HandleObjectsChanged(ICollection<Renderer> visibleRenderers);
 
         public override void Sample()
         {
