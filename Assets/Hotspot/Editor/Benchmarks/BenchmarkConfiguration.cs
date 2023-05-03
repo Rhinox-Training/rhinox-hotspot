@@ -24,6 +24,9 @@ namespace Hotspot.Editor
         [SerializeReference]
         public List<IBenchmarkStage> Entries;
 
+        [SerializeReference]
+        public List<BaseBenchmarkStatistic> Statistics;
+
         [ContextMenu("Force Generate")]
         private void OnPoseApplierTypeChanged()
         {

@@ -24,10 +24,12 @@ namespace Hotspot.Editor
         private string _benchmarkAssetPath;
         private BenchmarkConfiguration _benchmarkAsset;
         private IOrderedDrawable _listDrawable;
+        private IOrderedDrawable _listDrawable2;
+        private IOrderedDrawable _dropdownField;
         private float _benchmarkProgress;
         private bool _benchmarkRunning;
         private IBenchmarkStage _currentStage;
-        private IOrderedDrawable _dropdownField;
+        private Benchmark _benchmark;
         private const string BENCHMARKS_FOLDER = "Assets/Editor/Hotspot";
 
 
@@ -78,67 +80,17 @@ namespace Hotspot.Editor
             using (new eUtility.DisabledGroup(_benchmarkAsset == null || !Application.isPlaying))
             {
                 if (GUILayout.Button("Run Benchmark"))
-                    RunBenchmark();
+                {
+                    _benchmark = new Benchmark(_benchmarkAsset);
+                    _benchmark.BenchmarkTick += Repaint;
+                    _benchmark.Run();
+                }
                 DrawBenchmarkProgress();
             }
             
             GUILayout.FlexibleSpace();
         }
-
-        private void RunBenchmark()
-        {
-            if (_benchmarkRunning)
-            {
-                PLog.Warn<HotspotLogger>($"Benchmark already running, cannot run another one...");
-                return;
-            }
-            _benchmarkProgress = 0.0f;
-            _benchmarkRunning = true;
-            new ManagedCoroutine(RunBenchmarkCoroutine());
-        }
-
-        private IEnumerator RunBenchmarkCoroutine()
-        {
-            int count = _benchmarkAsset.Entries.Count;
-            int index = 0;
-            _currentStage = _benchmarkAsset.Entries[index];
-
-            float incrementSize = 1.0f / (float)count;
-            while (_currentStage != null)
-            {
-                float stageProgress = 0.0f;
-                if (!_currentStage.RunStage(_benchmarkAsset.PoseApplier, (progress) => { stageProgress = progress; }))
-                {
-                    PLog.Error<HotspotLogger>($"Benchmark stage {_currentStage} failed to start...");
-                    yield break;
-                }
-
-                _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
-                
-                yield return null;
-                while (!_currentStage.Completed)
-                {
-                    _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
-                    Repaint();
-                    yield return null;
-                }
-
-                if (_currentStage.Failed)
-                {
-                    PLog.Error<HotspotLogger>($"Benchmark run failed at stage {_currentStage}");
-                    yield break;
-                }
-
-                if (index < count - 1)
-                    _currentStage = _benchmarkAsset.Entries[++index];
-                else
-                    _currentStage = null;
-            }
-
-            _benchmarkProgress = 1.0f;
-            _benchmarkRunning = false;
-        }
-
+        
         private void DrawBenchmarkProgress()
         {
             var rect = EditorGUILayout.GetControlRect();
@@ -170,11 +122,19 @@ namespace Hotspot.Editor
                 var property = so.FindProperty(nameof(BenchmarkConfiguration.PoseApplierType));
                 _dropdownField = DrawableFactory.CreateDrawableFor(property);
             }
+            
+            if (_listDrawable2 == null)
+            {
+                var so = new SerializedObject(benchmarkAsset);
+                var property = so.FindProperty(nameof(BenchmarkConfiguration.Statistics));
+                _listDrawable2 = DrawableFactory.CreateDrawableFor(property);
+            }
 
             using (new eUtility.PaddedGUIScope(CustomGUIUtility.Padding * 2.0f))
             {
                 _dropdownField.Draw(GUIContentHelper.TempContent("PoseApplier"));
                 _listDrawable.Draw(GUIContent.none);
+                _listDrawable2.Draw(GUIContent.none);
             }
         }
 
