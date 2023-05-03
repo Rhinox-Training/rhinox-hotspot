@@ -16,6 +16,7 @@ namespace Rhinox.Hotspot.Editor
 
             foreach (var renderer in renderers)
             {
+                //renderer.
                 //var mats = renderers[0].sharedMaterials;
                 foreach (var mat in renderer.sharedMaterials)
                 {
