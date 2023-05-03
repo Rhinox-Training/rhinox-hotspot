@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Rhinox.GUIUtils.Editor;
 using UnityEditor;
@@ -14,9 +15,7 @@ namespace Hotspot.Editor
         private int _materialCount;
         private int _uniqueShaderCount;
 
-        private Vector2 _scrollPos;
-        //private string[] _uniqueShaders = null;             Occurrence
-        private IEnumerable<KeyValuePair<string, int>> _shaderOccurrence = null;
+        private IEnumerable<KeyValuePair<Shader, int>> _shaderOccurrence = null;
 
         [MenuItem(HotspotWindowHelper.ANALYSIS_PREFIX + "Rendered Material Analysis", false, 1500)]
         public static void ShowWindow()
@@ -47,23 +46,34 @@ namespace Hotspot.Editor
                 var renderers = _renderers.Where(x => x.isVisible).ToArray();
                 //var renderers = _renderers.Where(x => x.isPartOfStaticBatch).ToArray();
                 var materials = renderers.SelectMany(x => x.sharedMaterials).ToArray();
-                var shaders = materials.Select(x => x.shader.name).Distinct().ToArray();
+                var uniqueShaders = materials.Select(x => x.shader).Distinct().ToArray();
+                var uniqueShaderNames = uniqueShaders.Select(x => x.name).Distinct().ToArray();
 
                 _rendererCount = renderers.Length;
                 _materialCount = materials.Length;
-                _uniqueShaderCount = shaders.Length;
+                _uniqueShaderCount = uniqueShaderNames.Length;
 
-                _shaderOccurrence = materials.GroupBy(x => x.shader.name).Select(x => new KeyValuePair<string, int>(x.Key, x.Count()));
+                _shaderOccurrence = materials.GroupBy(x => x.shader.name).Select(x => new KeyValuePair<Shader, int>(x.First().shader, x.Count()));
+                _shaderOccurrence.OrderByDescending(x => x.Value);
             }
 
             if (_shaderOccurrence != null)
             {
-                _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(50f));
-                foreach (var item in _shaderOccurrence)
+                GUILayout.Space(5f);
+                GUILayout.Label($"Occurrence of Shaders:");
+                GUILayout.Space(10f);
+
+                foreach (var shader in _shaderOccurrence)
                 {
-                    GUILayout.Label($"{item.Key}: {item.Value}");
+                    EditorGUILayout.BeginHorizontal();
+                    EditorGUILayout.LabelField($"{shader.Key.name}: {shader.Value}");
+                    using (new eUtility.DisabledGroup())
+                    {
+                        EditorGUILayout.ObjectField(shader.Key, typeof(UnityEngine.Object), false);
+                    }
+
+                    EditorGUILayout.EndHorizontal();
                 }
-                GUILayout.EndScrollView();
             }
         }
     }
