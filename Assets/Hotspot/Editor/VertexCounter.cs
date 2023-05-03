@@ -106,7 +106,10 @@ namespace Rhinox.Hotspot.Editor
             GUILayout.Space(5f);
 
             if (GUILayout.Button("Calculate and visualize"))
+            {
                 VisualizeVertices();
+
+            }
 
             GUILayout.EndVertical();
         }
@@ -115,6 +118,8 @@ namespace Rhinox.Hotspot.Editor
         {
             if (tree.children == null)
             {
+                //check if cube center is too farm from camera, if so DISCARD
+                //LOD filter
                 if (tree.VertexCount > _MaxVerticesPerCube)
                 {
                     using (new eUtility.HandleColor(Color.Lerp(Color.white, Color.red, (tree.VertexCount - _MaxVerticesPerCube) / (_MaxVerticesPerCube * 10f))))
@@ -143,14 +148,6 @@ namespace Rhinox.Hotspot.Editor
 
             DrawChildren(_tree);
         }
-
-        //private void OnDrawGizmosSelected()
-        //{
-        //    if (_tree == null)
-        //        return;
-
-        //    DrawChildren(_tree);
-        //}
     }
 
     public class Octree
