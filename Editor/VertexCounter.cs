@@ -6,6 +6,8 @@ using UnityEngine.Rendering;
 using Hotspot.Editor;
 using Rhinox.Lightspeed.Collections;
 using Rhinox.Utilities.Editor;
+using UnityEditor.SearchService;
+using static UnityEditor.PlayerSettings;
 
 #if UNITY_EDITOR
 using Rhinox.GUIUtils.Editor;
@@ -19,14 +21,14 @@ namespace Rhinox.Hotspot.Editor
         protected override string Name => "Vertex Density Visualizer";
 
         //should later be exposed
-        private static int _MaxVerticesPerCube = 4;
-        private static float _minOctreeCubeSize = .1f;
+        private static int _MaxVerticesPerCube = 100;
+        private static float _minOctreeCubeSize = 1f;
 
         private float _biggest = 0f;
         private Octree _tree = null;
 
         private List<KeyValuePair<int, Vector3>> _hotList = new List<KeyValuePair<int, Vector3>>();
-        private Vector2 _scrollPos = Vector2.zero;
+        //private Vector2 _scrollPos = Vector2.zero;
         //private bool _requiresRefresh;
 
         [MenuItem(_menuItemPath, false, -189)]
@@ -66,22 +68,15 @@ namespace Rhinox.Hotspot.Editor
                 }
             }
 
-            DrawChildren(_tree);
-
-
-            //var myList = occurenceList.ToList();
-            //myList.Sort((pair1, pair2) => pair2.Value.CompareTo(pair1.Value));
-
             _hotList.Sort((pair1, pair2) => pair2.Key.CompareTo(pair1.Key));
         }
 
         protected override void OnGUI()
         {
             //_scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(50f));
-            //foreach (var item in _hotList)
-            //{
-            //    GUILayout.Label($"{item.Key}: {item.Value}");
-            //}
+
+
+
             //GUILayout.EndScrollView();
             //GUILayout.Space(15f);
 
@@ -110,6 +105,17 @@ namespace Rhinox.Hotspot.Editor
                 VisualizeVertices();
 
             }
+
+            //EditorGUILayout.BeginVertical();
+            //foreach (var item in _hotList)
+            //{
+            //    GUILayout.Label($"{item.Key}:");
+            //    if (GUILayout.Button("GOTO"))
+            //    {
+            //        SceneView.lastActiveSceneView.Frame(new Bounds(item.Value, Vector3.one), false);
+            //    }
+            //}
+            //EditorGUILayout.EndVertical();
 
             GUILayout.EndVertical();
         }
