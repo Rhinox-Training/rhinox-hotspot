@@ -3,22 +3,22 @@ using UnityEngine;
 
 namespace Hotspot.Editor
 {
+    public class LODInfo
+    {
+        public LODGroup Group;
+        public int LODLevel;
+
+        public bool IsLOD()
+        {
+            return LODLevel > 0;
+        }
+    }
+    
     public static class LODRendererCache
     {
-        private class LODInfo
-        {
-            public LODGroup Group;
-            public int LODLevel;
-
-            public bool IsLOD()
-            {
-                return LODLevel > 0;
-            }
-        }
-
         private static Dictionary<Renderer, LODInfo> _rendererCache;
 
-        public static bool IsLOD(Renderer renderer)
+        public static LODInfo GetLOD(Renderer renderer)
         {
             if (_rendererCache == null)
                 _rendererCache = new Dictionary<Renderer, LODInfo>();
@@ -26,7 +26,7 @@ namespace Hotspot.Editor
             if (_rendererCache.ContainsKey(renderer))
             {
                 var lodInfo = _rendererCache[renderer];
-                return lodInfo != null && lodInfo.IsLOD();
+                return lodInfo;
             }
 
             var lodGroup = renderer.GetComponentInParent<LODGroup>();
@@ -62,8 +62,20 @@ namespace Hotspot.Editor
                 }
             }
             _rendererCache.Add(renderer, info);
+            return info;
+        }
 
+        public static bool IsLOD(Renderer renderer)
+        {
+            var info = GetLOD(renderer);
             return info != null && info.IsLOD();
+        }
+
+        public static void ClearCache()
+        {
+            if (_rendererCache == null)
+                return;
+            _rendererCache.Clear();
         }
     }
 }
