@@ -5,6 +5,7 @@ using System.Collections;
 using UnityEngine.Rendering;
 using Hotspot.Editor;
 using Rhinox.Lightspeed.Collections;
+using Rhinox.Utilities.Editor;
 
 #if UNITY_EDITOR
 using Rhinox.GUIUtils.Editor;
@@ -12,8 +13,11 @@ using Rhinox.GUIUtils.Editor;
 
 namespace Rhinox.Hotspot.Editor
 {
-    public class VertexCounter : CustomEditorWindow
+    public class VertexCounter : CustomSceneOverlayWindow<VertexCounter>
     {
+        private const string _menuItemPath = WindowHelper.ToolsPrefix + "Show Vertex Density Visualizer";
+        protected override string Name => "Vertex Density Visualizer";
+
         //should later be exposed
         private static int _MaxVerticesPerCube = 4;
         private static float _minOctreeCubeSize = .1f;
@@ -23,20 +27,15 @@ namespace Rhinox.Hotspot.Editor
 
         private List<KeyValuePair<int, Vector3>> _hotList = new List<KeyValuePair<int, Vector3>>();
         private Vector2 _scrollPos = Vector2.zero;
+        //private bool _requiresRefresh;
 
-        //[MenuItem("Tools/Vertex Counter", false, 1)]
-        //[ContextMenu("Make Octree")]
-        [MenuItem(HotspotWindowHelper.ANALYSIS_PREFIX + "Vertex Density Visualizer", false, 1500)]
-        public static void ShowWindow()
-        {
-            var win = GetWindow(typeof(VertexCounter));
-            win.titleContent = new GUIContent("Vertex Density Visualizer");
-        }
+        [MenuItem(_menuItemPath, false, -189)]
+        public static void SetupWindow() => Window.Setup();
 
-        //protected override void Initialize()
-        //{
-        //base.Initialize();
-        //}
+        [MenuItem(_menuItemPath, true)]
+        public static bool SetupValidateWindow() => Window.HandleValidateWindow();
+
+        protected override string GetMenuPath() => _menuItemPath;
 
         private void VisualizeVertices()
         {
@@ -78,29 +77,33 @@ namespace Rhinox.Hotspot.Editor
 
         protected override void OnGUI()
         {
-            base.OnGUI();
+            //_scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(50f));
+            //foreach (var item in _hotList)
+            //{
+            //    GUILayout.Label($"{item.Key}: {item.Value}");
+            //}
+            //GUILayout.EndScrollView();
+            //GUILayout.Space(15f);
 
-            //GUILayout.BeginArea();
-            _scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(50f));
-            foreach (var item in _hotList)
-            {
-                GUILayout.Label($"{item.Key}: {item.Value}");
-            }
-            GUILayout.EndScrollView();
-            //GUILayout.EndArea();
-            GUILayout.Space(15f);
+            ///
+            ///ENTER KEY (should press button)
+            ///
 
+            GUILayout.Space(5f);
             GUILayout.BeginVertical();
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Max vertices per cube:");
-            int.TryParse(GUILayout.TextField($"{_MaxVerticesPerCube}", GUILayout.ExpandWidth(true)), out _MaxVerticesPerCube);
+            GUILayout.Space(5f);
+            int.TryParse(GUILayout.TextField($"{_MaxVerticesPerCube}", GUILayout.Width(75f)), out _MaxVerticesPerCube);
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Min cube size:");
-            float.TryParse(GUILayout.TextField($"{_minOctreeCubeSize}", GUILayout.ExpandWidth(true)), out _minOctreeCubeSize);
+            float.TryParse(GUILayout.TextField($"{_minOctreeCubeSize}", GUILayout.Width(75f)), out _minOctreeCubeSize);
             GUILayout.EndHorizontal();
+
+            GUILayout.Space(5f);
 
             if (GUILayout.Button("Calculate and visualize"))
                 VisualizeVertices();
@@ -108,18 +111,16 @@ namespace Rhinox.Hotspot.Editor
             GUILayout.EndVertical();
         }
 
-        [DrawGizmo(GizmoType.Active)]
         void DrawChildren(Octree tree)
         {
             if (tree.children == null)
             {
                 if (tree.VertexCount > _MaxVerticesPerCube)
                 {
-                    using (new eUtility.GizmoColor(Color.Lerp(Color.white, Color.red, (tree.VertexCount - _MaxVerticesPerCube) / (_MaxVerticesPerCube * 10f))))
+                    using (new eUtility.HandleColor(Color.Lerp(Color.white, Color.red, (tree.VertexCount - _MaxVerticesPerCube) / (_MaxVerticesPerCube * 10f))))
                     {
-                        //maybe add list of super bad locations that you can click on
                         Handles.Label(tree._bounds.center, $"{tree.VertexCount}");
-                        //Gizmos.DrawWireCube(tree._bounds.center, tree._bounds.size);
+                        Handles.DrawWireCube(tree._bounds.center, tree._bounds.size);
                         _hotList.Add(new KeyValuePair<int, Vector3>(tree.VertexCount, tree._bounds.center));
                     }
                 }
@@ -133,14 +134,23 @@ namespace Rhinox.Hotspot.Editor
             }
         }
 
-        private void OnDrawGizmosSelected()
+        protected override void OnSceneGUI(SceneView sceneView)
         {
+            base.OnSceneGUI(sceneView);
+
             if (_tree == null)
                 return;
 
             DrawChildren(_tree);
         }
 
+        //private void OnDrawGizmosSelected()
+        //{
+        //    if (_tree == null)
+        //        return;
+
+        //    DrawChildren(_tree);
+        //}
     }
 
     public class Octree
