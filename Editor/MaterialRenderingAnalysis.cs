@@ -1,10 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Rhinox.GUIUtils.Editor;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Hotspot.Editor
 {
@@ -44,7 +42,6 @@ namespace Hotspot.Editor
             if (GUILayout.Button("Take Material Snapshot"))
             {
                 var renderers = _renderers.Where(x => x.isVisible).ToArray();
-                //var renderers = _renderers.Where(x => x.isPartOfStaticBatch).ToArray();
                 var materials = renderers.SelectMany(x => x.sharedMaterials).ToArray();
                 var uniqueShaders = materials.Select(x => x.shader).Distinct().ToArray();
                 var uniqueShaderNames = uniqueShaders.Select(x => x.name).Distinct().ToArray();
