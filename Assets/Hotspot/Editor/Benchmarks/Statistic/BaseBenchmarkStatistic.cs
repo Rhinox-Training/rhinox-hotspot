@@ -16,6 +16,11 @@ namespace Hotspot.Editor
             
         }
         
+        public virtual void CleanUp()
+        {
+            
+        }
+        
         public abstract void Sample();
 
         public virtual void DrawLayout()

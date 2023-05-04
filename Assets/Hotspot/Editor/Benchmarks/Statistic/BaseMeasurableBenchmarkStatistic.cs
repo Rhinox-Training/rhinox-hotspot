@@ -18,7 +18,6 @@ namespace Hotspot.Editor
                 _samples.Clear();
         }
 
-
         protected abstract string GetStatName();
 
         protected abstract T SampleStatistic();

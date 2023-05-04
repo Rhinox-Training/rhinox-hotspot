@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net;
 using Rhinox.Perceptor;
 using Rhinox.Utilities;
 using UnityEngine;
@@ -88,6 +89,17 @@ namespace Hotspot.Editor
             int count = _configuration.Entries.Count;
             int index = 0;
             _currentStage = _configuration.Entries[index];
+            
+            // Initialize statistics
+            if (_configuration.Statistics != null)
+            {
+                foreach (var stat in _configuration.Statistics)
+                {
+                    if (stat == null)
+                        continue;
+                    stat.StartNewRun();
+                }
+            }
 
             float incrementSize = 1.0f / (float)count;
             while (_currentStage != null)
@@ -124,6 +136,18 @@ namespace Hotspot.Editor
             HandleTick();
             _benchmarkProgress = 1.0f;
             _benchmarkRunning = false;
+
+            
+            // Initialize statistics
+            if (_configuration.Statistics != null)
+            {
+                foreach (var stat in _configuration.Statistics)
+                {
+                    if (stat == null)
+                        continue;
+                    stat.CleanUp();
+                }
+            }
 
             HandleFinish();
         }
