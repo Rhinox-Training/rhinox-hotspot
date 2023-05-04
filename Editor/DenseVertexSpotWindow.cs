@@ -34,6 +34,8 @@ namespace Rhinox.Hotspot.Editor
         public void UpdateTreshold(int treshold)
         {
             _hotSpotTreshold = treshold;
+
+            UpdateHotSpotList();
         }
 
         private void RecursiveHotSpotFinder(Octree tree)
@@ -71,14 +73,12 @@ namespace Rhinox.Hotspot.Editor
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
 
             float width = GUI.skin.label.CalcSize(new GUIContent("#9999:")).x;
-
-            float widthCount = GUI.skin.label.CalcSize(new GUIContent("Vertex Count: 999.999")).x;
-
             GUIStyle styleLabelPos = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleRight
             };
 
+            float widthCount = GUI.skin.label.CalcSize(new GUIContent("Vertex Count: 999.999")).x;
             GUIStyle styleLabelCount = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleLeft
