@@ -15,6 +15,7 @@ namespace Hotspot.Editor
 
         private List<BenchmarkResultEntry> _results;
         public IReadOnlyCollection<BenchmarkResultEntry> Results => _results;
+        
 
         private bool _benchmarkRunning;
         private float _benchmarkProgress;
@@ -22,6 +23,9 @@ namespace Hotspot.Editor
         private IBenchmarkStage _currentStage;
         private ManagedCoroutine _benchmarkCoroutine;
 
+
+        public delegate void FinishedBenchmarkHandler(Benchmark benchmark, IReadOnlyCollection<BenchmarkResultEntry> results);
+        public event FinishedBenchmarkHandler Finished;
         public event Action BenchmarkTick;
 
         public Benchmark(BenchmarkConfiguration config)
@@ -157,6 +161,8 @@ namespace Hotspot.Editor
                     _results.Add(result);
                 }
             }
+
+            Finished?.Invoke(this, _results);
         }
         
         public void DrawLayout()
