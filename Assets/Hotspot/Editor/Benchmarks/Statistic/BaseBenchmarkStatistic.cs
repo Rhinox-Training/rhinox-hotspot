@@ -12,5 +12,10 @@ namespace Hotspot.Editor
         {
             
         }
+
+        public virtual BenchmarkResultEntry GetResult()
+        {
+            return null;
+        }
     }
 }

@@ -66,6 +66,15 @@ namespace Hotspot.Editor
             }
         }
 
+        public void Cancel()
+        {
+            if (_coroutine == null)
+                return;
+            
+            _coroutine.Stop();
+            TriggerFinished(true, "Cancelled by user.");
+        }
+
         protected virtual IEnumerator<float> SplitByIncrement(float duration, float incrementSeconds = 1.0f)
         {
             float time = 0.0f;
