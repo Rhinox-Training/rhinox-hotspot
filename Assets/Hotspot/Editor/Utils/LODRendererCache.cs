@@ -52,11 +52,14 @@ namespace Hotspot.Editor
                         }
                         else
                         {
-                            _rendererCache.Add(lodRenderer, new LODInfo()
+                            if (!_rendererCache.ContainsKey(lodRenderer))
                             {
-                                Group = lodGroup,
-                                LODLevel = i
-                            });
+                                _rendererCache.Add(lodRenderer, new LODInfo()
+                                {
+                                    Group = lodGroup,
+                                    LODLevel = i
+                                });
+                            }
                         }
                     }
                 }

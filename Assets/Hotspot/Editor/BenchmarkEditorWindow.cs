@@ -10,6 +10,7 @@ using Rhinox.Perceptor;
 using Rhinox.Utilities;
 using Sirenix.OdinInspector;
 using UnityEditor;
+using UnityEditor.IMGUI.Controls;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -31,6 +32,7 @@ namespace Hotspot.Editor
         private IBenchmarkStage _currentStage;
         private Benchmark _benchmark;
         private Vector2 _scrollPositionStats;
+        private BenchmarkResultEntry[] _resultsCache;
         private const string BENCHMARKS_FOLDER = "Assets/Editor/Hotspot";
 
 
@@ -84,8 +86,10 @@ namespace Hotspot.Editor
                 {
                     if (GUILayout.Button("Run Benchmark"))
                     {
+                        _resultsCache = null;
                         _benchmark = new Benchmark(_benchmarkAsset);
                         _benchmark.BenchmarkTick += OnBenchmarkTick;
+                        _benchmark.Finished += OnFinished;
                         _benchmark.Run();
                     }
                 }
@@ -101,13 +105,39 @@ namespace Hotspot.Editor
 
                 DrawBenchmarkProgress();
 
-                _scrollPositionStats = GUILayout.BeginScrollView(_scrollPositionStats, false, true);
+                GUILayout.Space(16);
+                
                 if (_benchmark != null && _benchmark.IsRunning)
+                {
+                    CustomEditorGUI.Title("Statistics");
+                    _scrollPositionStats = GUILayout.BeginScrollView(_scrollPositionStats, false, true);
                     _benchmark.DrawLayout();
-                GUILayout.EndScrollView();
+                    GUILayout.EndScrollView();
+                }
+                else
+                {
+                    CustomEditorGUI.Title("Results");
+                    if (_resultsCache != null)
+                    {
+                        using (var table = new eUtility.SimpleTableView(new [] {"Entry", "Average", "StdDev"}))
+                        {
+                            foreach (var result in _resultsCache)
+                            {
+                                if (result == null)
+                                    continue;
+                                table.DrawRow(result.Name, result.Average, result.StdDev);
+                            }
+                        }
+                    }
+                }
             }
             
             GUILayout.FlexibleSpace();
+        }
+
+        private void OnFinished(Benchmark benchmark, IReadOnlyCollection<BenchmarkResultEntry> results)
+        {
+            _resultsCache = results.ToArray();
         }
 
         private void OnBenchmarkTick()

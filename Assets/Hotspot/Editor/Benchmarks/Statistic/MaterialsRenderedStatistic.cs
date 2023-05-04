@@ -21,5 +21,15 @@ namespace Hotspot.Editor
             
             GUILayout.Label($"Materials: {(_materials != null ? _materials.Length : 0)}");
         }
+
+        public override BenchmarkResultEntry GetResult()
+        {
+            return new BenchmarkResultEntry()
+            {
+                Name = "Materials Rendered",
+                Average = 0.0f,
+                StdDev = 0.0f
+            };
+        }
     }
 }

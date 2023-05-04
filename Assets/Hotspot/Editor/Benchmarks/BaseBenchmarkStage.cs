@@ -43,7 +43,7 @@ namespace Hotspot.Editor
                 return false;
             }
 
-            _coroutine = new ManagedCoroutine(RunBenchmarkCoroutine(progress));
+            _coroutine = ManagedCoroutine.Begin(RunBenchmarkCoroutine(progress));
             _coroutine.OnFinished += OnFinishedCoroutine;
             _coroutine.OnFailed += OnFailedCoroutine;
             return true;
