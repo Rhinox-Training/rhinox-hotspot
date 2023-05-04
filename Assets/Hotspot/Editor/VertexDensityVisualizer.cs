@@ -1,13 +1,10 @@
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
-using System.Collections;
-using UnityEngine.Rendering;
-using Hotspot.Editor;
-using Rhinox.Lightspeed.Collections;
 using Rhinox.Utilities.Editor;
-using UnityEditor.SearchService;
-using static UnityEditor.PlayerSettings;
+using Rhinox.Lightspeed;
+using Hotspot.Editor;
+using static PlasticGui.PlasticTableColumn;
 
 #if UNITY_EDITOR
 using Rhinox.GUIUtils.Editor;
@@ -15,21 +12,19 @@ using Rhinox.GUIUtils.Editor;
 
 namespace Rhinox.Hotspot.Editor
 {
-    public class VertexCounter : CustomSceneOverlayWindow<VertexCounter>
+    public class VertexDensityVisualizer : CustomSceneOverlayWindow<VertexDensityVisualizer>
     {
         private const string _menuItemPath = WindowHelper.ToolsPrefix + "Show Vertex Density Visualizer";
         protected override string Name => "Vertex Density Visualizer";
 
-        //should later be exposed
         private static int _MaxVerticesPerCube = 100;
         private static float _minOctreeCubeSize = 1f;
+        private static float _cubeViewDistance = 50f;
 
         private float _biggest = 0f;
         private Octree _tree = null;
+        private DenseVertexSpotWindow _denseVertexSpotInfoWindow = null;
 
-        private List<KeyValuePair<int, Vector3>> _hotList = new List<KeyValuePair<int, Vector3>>();
-        //private Vector2 _scrollPos = Vector2.zero;
-        //private bool _requiresRefresh;
 
         [MenuItem(_menuItemPath, false, -189)]
         public static void SetupWindow() => Window.Setup();
@@ -52,7 +47,8 @@ namespace Rhinox.Hotspot.Editor
             Bounds sceneBound = new Bounds();
             foreach (MeshRenderer meshRenderer in renderers)
             {
-                sceneBound.Encapsulate(meshRenderer.bounds);
+                if (!LODRendererCache.IsLOD(meshRenderer))
+                    sceneBound.Encapsulate(meshRenderer.bounds);
             }
 
             _biggest = Mathf.Max(Mathf.Max(sceneBound.size.x, sceneBound.size.y), sceneBound.size.z);
@@ -62,28 +58,22 @@ namespace Rhinox.Hotspot.Editor
 
             foreach (MeshFilter meshFilter in filters)
             {
+                //first check if the meshfilters renderer is and LOD, if so, discard and goto next
+                if (!meshFilter.gameObject.TryGetComponent<Renderer>(out var renderer))
+                    continue;
+
+                if (LODRendererCache.IsLOD(renderer))
+                    continue;
+
                 foreach (var point in meshFilter.sharedMesh.vertices)
                 {
                     _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point));
                 }
             }
-
-            _hotList.Sort((pair1, pair2) => pair2.Key.CompareTo(pair1.Key));
         }
 
         protected override void OnGUI()
         {
-            //_scrollPos = GUILayout.BeginScrollView(_scrollPos, GUILayout.Height(50f));
-
-
-
-            //GUILayout.EndScrollView();
-            //GUILayout.Space(15f);
-
-            ///
-            ///ENTER KEY (should press button)
-            ///
-
             GUILayout.Space(5f);
             GUILayout.BeginVertical();
 
@@ -98,41 +88,51 @@ namespace Rhinox.Hotspot.Editor
             float.TryParse(GUILayout.TextField($"{_minOctreeCubeSize}", GUILayout.Width(75f)), out _minOctreeCubeSize);
             GUILayout.EndHorizontal();
 
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Cube render distance:");
+            _cubeViewDistance = GUILayout.HorizontalSlider(_cubeViewDistance, 10f, 100f, GUILayout.Width(75f));
+            GUILayout.EndHorizontal();
+
             GUILayout.Space(5f);
 
             if (GUILayout.Button("Calculate and visualize"))
             {
                 VisualizeVertices();
-
             }
 
-            //EditorGUILayout.BeginVertical();
-            //foreach (var item in _hotList)
-            //{
-            //    GUILayout.Label($"{item.Key}:");
-            //    if (GUILayout.Button("GOTO"))
-            //    {
-            //        SceneView.lastActiveSceneView.Frame(new Bounds(item.Value, Vector3.one), false);
-            //    }
-            //}
-            //EditorGUILayout.EndVertical();
+            GUILayout.Space(5f);
+
+            if (GUILayout.Button("Show Dense Spot Info"))
+            {
+                if (_tree != null)
+                {
+                    _denseVertexSpotInfoWindow = EditorWindow.GetWindow<DenseVertexSpotWindow>();
+
+                    if (_denseVertexSpotInfoWindow == null)
+                        _denseVertexSpotInfoWindow = new DenseVertexSpotWindow();
+
+                    _denseVertexSpotInfoWindow.UpdateTree(_tree);
+
+                    DenseVertexSpotWindow.ShowWindow();
+                }
+            }
+
 
             GUILayout.EndVertical();
         }
 
-        void DrawChildren(Octree tree)
+        private void DrawChildren(Octree tree)
         {
             if (tree.children == null)
             {
-                //check if cube center is too farm from camera, if so DISCARD
-                //LOD filter
-                if (tree.VertexCount > _MaxVerticesPerCube)
+                //check if cube center is too fam from camera, if so DISCARD IT
+                if (tree.VertexCount > _MaxVerticesPerCube &&
+                    (tree._bounds.center.SqrDistanceTo(SceneView.currentDrawingSceneView.camera.transform.position)) <= _cubeViewDistance)
                 {
                     using (new eUtility.HandleColor(Color.Lerp(Color.white, Color.red, (tree.VertexCount - _MaxVerticesPerCube) / (_MaxVerticesPerCube * 10f))))
                     {
                         Handles.Label(tree._bounds.center, $"{tree.VertexCount}");
                         Handles.DrawWireCube(tree._bounds.center, tree._bounds.size);
-                        _hotList.Add(new KeyValuePair<int, Vector3>(tree.VertexCount, tree._bounds.center));
                     }
                 }
 
