@@ -30,6 +30,7 @@ namespace Hotspot.Editor
         private bool _benchmarkRunning;
         private IBenchmarkStage _currentStage;
         private Benchmark _benchmark;
+        private Vector2 _scrollPositionStats;
         private const string BENCHMARKS_FOLDER = "Assets/Editor/Hotspot";
 
 
@@ -79,28 +80,53 @@ namespace Hotspot.Editor
             GUILayout.Space(EditorGUIUtility.singleLineHeight);
             using (new eUtility.DisabledGroup(_benchmarkAsset == null || !Application.isPlaying))
             {
-                if (GUILayout.Button("Run Benchmark"))
+                if (_benchmark == null || !_benchmark.IsRunning)
                 {
-                    _benchmark = new Benchmark(_benchmarkAsset);
-                    _benchmark.BenchmarkTick += Repaint;
-                    _benchmark.Run();
+                    if (GUILayout.Button("Run Benchmark"))
+                    {
+                        _benchmark = new Benchmark(_benchmarkAsset);
+                        _benchmark.BenchmarkTick += OnBenchmarkTick;
+                        _benchmark.Run();
+                    }
                 }
+                else
+                {
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button(_benchmark.IsPaused ? "Unpause Benchmark" : "Pause Benchmark"))
+                        _benchmark.TogglePause();
+                    if (GUILayout.Button("Cancel Benchmark"))
+                        _benchmark.Cancel();
+                    GUILayout.EndHorizontal();
+                }
+
                 DrawBenchmarkProgress();
+
+                _scrollPositionStats = GUILayout.BeginScrollView(_scrollPositionStats, false, true);
+                if (_benchmark != null && _benchmark.IsRunning)
+                    _benchmark.DrawLayout();
+                GUILayout.EndScrollView();
             }
             
             GUILayout.FlexibleSpace();
         }
-        
+
+        private void OnBenchmarkTick()
+        {
+            Repaint();
+        }
+
         private void DrawBenchmarkProgress()
         {
             var rect = EditorGUILayout.GetControlRect();
             EditorGUI.DrawRect(rect, CustomGUIStyles.BorderColor);
 
-            var progressRect = rect.AlignLeft(rect.width * _benchmarkProgress);
+            float progress = _benchmark != null ? _benchmark.Progress : 0.0f;
+
+            var progressRect = rect.AlignLeft(rect.width * progress);
             EditorGUI.DrawRect(progressRect, Color.gray);
 
 
-            string progressText = $"{_benchmarkProgress * 100:0.00}%";
+            string progressText = $"{progress * 100:0.00}%";
             var tempContent = GUIContentHelper.TempContent(progressText);
             float labelWidth = CustomGUIStyles.Label.CalcSize(tempContent).x;
             EditorGUI.LabelField(rect.AlignCenter(labelWidth), tempContent);

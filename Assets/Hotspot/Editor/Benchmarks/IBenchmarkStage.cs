@@ -8,5 +8,6 @@ namespace Hotspot.Editor
         bool Completed { get; }
         bool Failed { get; }
         bool RunStage(ICameraPoseApplier cameraPoseApplier, Action<float> progressCallback = null);
+        void SetPausedState(bool paused);
     }
 }
