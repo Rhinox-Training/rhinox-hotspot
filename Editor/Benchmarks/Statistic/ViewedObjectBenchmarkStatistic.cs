@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Codice.Client.ChangeTrackerService;
 using UnityEngine;
 
 namespace Hotspot.Editor
@@ -9,8 +10,9 @@ namespace Hotspot.Editor
     {
         private RenderedObjectTracker _objectTracker;
 
-        public void Initialize()
+        public override void StartNewRun()
         {
+            base.StartNewRun();
             if (_objectTracker != null)
                 return;
             _objectTracker = new RenderedObjectTracker();
@@ -18,8 +20,9 @@ namespace Hotspot.Editor
             _objectTracker.VisibleRenderersChanged += OnVisibleObjectsChanged;
         }
 
-        public void Terminate()
+        public override void CleanUp()
         {
+            base.CleanUp();
             if (_objectTracker != null)
             {
                 _objectTracker.VisibleRenderersChanged -= OnVisibleObjectsChanged;
@@ -37,7 +40,9 @@ namespace Hotspot.Editor
 
         public override void Sample()
         {
-            
+            if (_objectTracker != null && Camera.main != null)
+                _objectTracker.UpdateForCamera(Camera.main);
+            base.Sample();
         }
     }
 }
