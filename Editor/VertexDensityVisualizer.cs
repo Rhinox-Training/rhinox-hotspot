@@ -15,11 +15,15 @@ namespace Rhinox.Hotspot.Editor
     public class VertexDensityVisualizer : CustomSceneOverlayWindow<VertexDensityVisualizer>
     {
         private const string _menuItemPath = WindowHelper.ToolsPrefix + "Show Vertex Density Visualizer";
+        private const float _minCubeDistance = 10f;
+        private const float _maxCubeDistance = 200f;
+        private static float _cubeViewDistance = 100f;
+
+        private static int _MaxVerticesPerCube = 500;
+        private const int _maxVerticesMultiplier = 10;
         protected override string Name => "Vertex Density Visualizer";
 
-        private static int _MaxVerticesPerCube = 100;
         private static float _minOctreeCubeSize = 1f;
-        private static float _cubeViewDistance = 50f;
 
         private float _biggest = 0f;
         private Octree _tree = null;
@@ -72,6 +76,15 @@ namespace Rhinox.Hotspot.Editor
             }
         }
 
+        protected override void OnSelectionChanged()
+        {
+            if (_denseVertexSpotInfoWindow != null)
+            {
+                _denseVertexSpotInfoWindow.UpdateTreshold(_MaxVerticesPerCube);
+            }
+
+        }
+
         protected override void OnGUI()
         {
             GUILayout.Space(5f);
@@ -90,7 +103,7 @@ namespace Rhinox.Hotspot.Editor
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Cube render distance:");
-            _cubeViewDistance = GUILayout.HorizontalSlider(_cubeViewDistance, 10f, 100f, GUILayout.Width(75f));
+            _cubeViewDistance = GUILayout.HorizontalSlider(_cubeViewDistance, _minCubeDistance, _maxCubeDistance, GUILayout.Width(75f));
             GUILayout.EndHorizontal();
 
             GUILayout.Space(5f);
@@ -112,6 +125,7 @@ namespace Rhinox.Hotspot.Editor
                         _denseVertexSpotInfoWindow = new DenseVertexSpotWindow();
 
                     _denseVertexSpotInfoWindow.UpdateTree(_tree);
+                    _denseVertexSpotInfoWindow.UpdateTreshold(_MaxVerticesPerCube);
 
                     DenseVertexSpotWindow.ShowWindow();
                 }
@@ -129,7 +143,7 @@ namespace Rhinox.Hotspot.Editor
                 if (tree.VertexCount > _MaxVerticesPerCube &&
                     (tree._bounds.center.SqrDistanceTo(SceneView.currentDrawingSceneView.camera.transform.position)) <= _cubeViewDistance)
                 {
-                    using (new eUtility.HandleColor(Color.Lerp(Color.white, Color.red, (tree.VertexCount - _MaxVerticesPerCube) / (_MaxVerticesPerCube * 10f))))
+                    using (new eUtility.HandleColor(Color.Lerp(Color.white, Color.red, (tree.VertexCount - _MaxVerticesPerCube) / (_MaxVerticesPerCube * _maxVerticesMultiplier))))
                     {
                         Handles.Label(tree._bounds.center, $"{tree.VertexCount}");
                         Handles.DrawWireCube(tree._bounds.center, tree._bounds.size);

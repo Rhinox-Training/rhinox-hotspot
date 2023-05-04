@@ -9,6 +9,11 @@ namespace Rhinox.Hotspot.Editor
 {
     public class DenseVertexSpotWindow : CustomEditorWindow
     {
+        private const int _minListLength = 10;
+        private const int _maxListLength = 250;
+        private int _hotSpotListLength = 100;
+
+        private int _hotSpotTreshold = 0;
         private Vector2 _scrollPos = Vector2.zero;
         private Octree _octTree = null;
         private List<KeyValuePair<int, Vector3>> _hotList = new List<KeyValuePair<int, Vector3>>();
@@ -26,11 +31,16 @@ namespace Rhinox.Hotspot.Editor
             UpdateHotSpotList();
         }
 
+        public void UpdateTreshold(int treshold)
+        {
+            _hotSpotTreshold = treshold;
+        }
+
         private void RecursiveHotSpotFinder(Octree tree)
         {
             if (tree.children == null)
             {
-                if (tree.VertexCount > 0)
+                if (tree.VertexCount > _hotSpotTreshold)
                 {
                     _hotList.Add(new KeyValuePair<int, Vector3>(tree.VertexCount, tree._bounds.center));
                 }
@@ -54,7 +64,8 @@ namespace Rhinox.Hotspot.Editor
 
         protected override void OnGUI()
         {
-
+            EditorGUILayout.Space(5f);
+            _hotSpotListLength = EditorGUILayout.IntSlider(_hotSpotListLength, _minListLength, _maxListLength);
             EditorGUILayout.Space(10f);
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
@@ -73,19 +84,20 @@ namespace Rhinox.Hotspot.Editor
                 alignment = TextAnchor.MiddleLeft
             };
 
-            int index = 0;
-            foreach (var item in _hotList)
-            {
-                EditorGUILayout.BeginHorizontal();
-                ++index;
 
-                string est = string.Format(new CultureInfo("nl-BE"), $"Vertex Count: {item.Key:N0}");
+            for (int index = 0; index < _hotList.Count; ++index)
+            {
+                if (index > _hotSpotListLength)
+                    break;
+
+                EditorGUILayout.BeginHorizontal();
+
                 //GUILayout.wid
                 GUILayout.Label($"#{index}:", styleLabelPos, GUILayout.MaxWidth(width));
-                GUILayout.Label(est, styleLabelCount, GUILayout.MaxWidth(widthCount));
-                if (GUILayout.Button("GOTO"/*, GUILayout.Width(75f)*/))
+                GUILayout.Label($"Vertex Count: {_hotList[index].Key}", styleLabelCount, GUILayout.MaxWidth(widthCount));
+                if (GUILayout.Button("GOTO"))
                 {
-                    SceneView.lastActiveSceneView.Frame(new Bounds(item.Value, Vector3.one), false);
+                    SceneView.lastActiveSceneView.Frame(new Bounds(_hotList[index].Value, Vector3.one), false);
                 }
                 EditorGUILayout.EndHorizontal();
             }
