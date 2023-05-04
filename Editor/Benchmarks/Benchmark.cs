@@ -2,6 +2,7 @@
 using System.Collections;
 using Rhinox.Perceptor;
 using Rhinox.Utilities;
+using UnityEngine;
 
 namespace Hotspot.Editor
 {
@@ -9,11 +10,13 @@ namespace Hotspot.Editor
     {
         public float Progress => _benchmarkProgress;
         public bool IsRunning => _benchmarkRunning;
+        public bool IsPaused => IsRunning && (_benchmarkCoroutine != null && _benchmarkCoroutine.Paused);
         
         private bool _benchmarkRunning;
         private float _benchmarkProgress;
         private readonly BenchmarkConfiguration _configuration;
         private IBenchmarkStage _currentStage;
+        private ManagedCoroutine _benchmarkCoroutine;
 
         public event Action BenchmarkTick;
 
@@ -32,7 +35,40 @@ namespace Hotspot.Editor
             }
             _benchmarkProgress = 0.0f;
             _benchmarkRunning = true;
-            new ManagedCoroutine(RunBenchmarkCoroutine());
+            _benchmarkCoroutine = ManagedCoroutine.Begin(RunBenchmarkCoroutine());
+        }
+
+        public void TogglePause()
+        {
+            if (!IsRunning || _benchmarkCoroutine == null)
+            {
+                PLog.Warn<HotspotLogger>($"No running benchmark, can't change pause state");
+                return;
+            }
+
+            bool targetState = !_benchmarkCoroutine.Paused;
+            
+            if (_currentStage != null)
+                _currentStage.SetPausedState(targetState);
+            
+            if (targetState)
+                _benchmarkCoroutine.Pause();
+            else
+                _benchmarkCoroutine.Unpause();
+        }
+
+        public void Cancel()
+        {
+            if (!IsRunning || _benchmarkCoroutine == null)
+            {
+                PLog.Warn<HotspotLogger>($"No running benchmark, cannot be cancelled...");
+                return;
+            }
+            
+            _benchmarkCoroutine.Stop();
+            _benchmarkCoroutine = null;
+            _benchmarkProgress = 0.0f;
+            _benchmarkRunning = false;
         }
 
         private IEnumerator RunBenchmarkCoroutine()
@@ -52,7 +88,7 @@ namespace Hotspot.Editor
                 }
 
                 _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
-                
+                HandleTick();
                 yield return null;
                 while (!_currentStage.Completed)
                 {
@@ -105,9 +141,6 @@ namespace Hotspot.Editor
                     stat.DrawLayout();
                 }
             }
-            
-            
-            BenchmarkTick?.Invoke();
         }
     }
 }

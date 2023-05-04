@@ -49,6 +49,23 @@ namespace Hotspot.Editor
             return true;
         }
 
+        public void SetPausedState(bool paused)
+        {
+            if (_coroutine == null)
+                return;
+
+            if (paused)
+            {
+                if (!_coroutine.Paused)
+                    _coroutine.Pause();
+            }
+            else
+            {
+                if (_coroutine.Paused)
+                    _coroutine.Unpause();
+            }
+        }
+
         protected virtual IEnumerator<float> SplitByIncrement(float duration, float incrementSeconds = 1.0f)
         {
             float time = 0.0f;
@@ -107,6 +124,8 @@ namespace Hotspot.Editor
 
         public virtual void OnFinishedStage(bool failed)
         {
+            if (_cameraPoseApplier != null)
+                _cameraPoseApplier.Restore();
         }
 
         public override string ToString()
