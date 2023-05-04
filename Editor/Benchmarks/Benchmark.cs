@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using Rhinox.Perceptor;
 using Rhinox.Utilities;
 using UnityEngine;
@@ -11,7 +12,10 @@ namespace Hotspot.Editor
         public float Progress => _benchmarkProgress;
         public bool IsRunning => _benchmarkRunning;
         public bool IsPaused => IsRunning && (_benchmarkCoroutine != null && _benchmarkCoroutine.Paused);
-        
+
+        private List<BenchmarkResultEntry> _results;
+        public IReadOnlyCollection<BenchmarkResultEntry> Results => _results;
+
         private bool _benchmarkRunning;
         private float _benchmarkProgress;
         private readonly BenchmarkConfiguration _configuration;
@@ -23,6 +27,7 @@ namespace Hotspot.Editor
         public Benchmark(BenchmarkConfiguration config)
         {
             _configuration = config;
+            _results = new List<BenchmarkResultEntry>();
         }
         
 
@@ -64,6 +69,9 @@ namespace Hotspot.Editor
                 PLog.Warn<HotspotLogger>($"No running benchmark, cannot be cancelled...");
                 return;
             }
+
+            if (_currentStage != null)
+                _currentStage.Cancel();
             
             _benchmarkCoroutine.Stop();
             _benchmarkCoroutine = null;
@@ -112,6 +120,8 @@ namespace Hotspot.Editor
             HandleTick();
             _benchmarkProgress = 1.0f;
             _benchmarkRunning = false;
+
+            HandleFinish();
         }
 
         private void HandleTick()
@@ -128,6 +138,25 @@ namespace Hotspot.Editor
             
             
             BenchmarkTick?.Invoke();
+        }
+
+        private void HandleFinish()
+        {
+            if (_results == null)
+                _results = new List<BenchmarkResultEntry>();
+            
+            if (_configuration.Statistics != null)
+            {
+                foreach (var stat in _configuration.Statistics)
+                {
+                    if (stat == null)
+                        continue;
+                    var result = stat.GetResult();
+                    if (result == null)
+                        continue;
+                    _results.Add(result);
+                }
+            }
         }
         
         public void DrawLayout()
