@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Hotspot.Editor
 {
     [Serializable]
-    public abstract class ViewedObjectBenchmarkStatistic : BaseBenchmarkStatistic
+    public abstract class ViewedObjectBenchmarkStatistic : BaseMeasurableBenchmarkStatistic
     {
         private RenderedObjectTracker _objectTracker;
 
