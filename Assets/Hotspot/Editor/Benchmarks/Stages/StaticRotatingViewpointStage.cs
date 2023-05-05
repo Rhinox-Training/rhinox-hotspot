@@ -18,6 +18,8 @@ namespace Hotspot.Editor
 
         protected override IEnumerator RunBenchmarkCoroutine(Action<float> progressCallback = null)
         {
+            CameraPose.Validate();
+
             Pose startPose = new Pose(CameraPose.position,
                 CameraPose.rotation * Quaternion.AngleAxis(MinRelativeYawDegrees, Vector3.up));
             Pose endPose = new Pose(CameraPose.position,

@@ -17,6 +17,8 @@ namespace Hotspot.Editor
 
         protected override IEnumerator RunBenchmarkCoroutine(Action<float> progressCallback = null)
         {
+            CameraPose.Validate();
+
             ApplyPoseToCamera(CameraPose);
             float progress = 0.0f;
             var enumeration = SplitByIncrement(Duration).Enumerate();
