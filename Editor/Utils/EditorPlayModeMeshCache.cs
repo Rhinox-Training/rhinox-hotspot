@@ -33,7 +33,11 @@ namespace Hotspot.Editor
                     if (filter == null)
                         continue;
 
-                    _vertexCache.Add(filter, filter.sharedMesh.vertices.ToArray());
+                    var sharedMesh = filter.sharedMesh;
+                    if (sharedMesh.isReadable)
+                        continue;
+
+                    _vertexCache.Add(filter, sharedMesh.vertices.ToArray());
                 }
 
             }
