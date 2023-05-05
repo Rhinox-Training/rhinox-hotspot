@@ -12,6 +12,7 @@ namespace Hotspot.Editor
     {
         public static ProfilerStat UsedSystemMemory = new ProfilerStat(ProfilerCategory.Memory, "System Used Memory");
         public static ProfilerStat GCReservedMemory = new ProfilerStat(ProfilerCategory.Memory, "GC Reserved Memory");
+        public static ProfilerStat BatchesCount = new ProfilerStat(ProfilerCategory.Render, "Batches Count");
         
         public static ProfilerStat[] All
         {
@@ -20,14 +21,15 @@ namespace Hotspot.Editor
                 return new[]
                 {
                     UsedSystemMemory,
-                    GCReservedMemory
+                    GCReservedMemory,
+                    BatchesCount
                 };
             }
         }
     }
 
     [Serializable]
-    public class ProfilerStat : ISerializationCallbackReceiver
+    public class ProfilerStat : ISerializationCallbackReceiver, IEquatable<ProfilerStat>
     {
         [NonSerialized]
         public ProfilerCategory Category;
@@ -42,6 +44,7 @@ namespace Hotspot.Editor
         {
             Category = category;
             StatName = name;
+            OnBeforeSerialize();
         }
 
 
@@ -63,6 +66,36 @@ namespace Hotspot.Editor
                     _serializedCategory == (ushort) _categoryField.GetValue(x.GetValue(null)))
                 .Select(x => (ProfilerCategory)x.GetValue(null))
                 .FirstOrDefault();
+        }
+        
+        public bool Equals(ProfilerStat other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return StatName == other.StatName && _serializedCategory == other._serializedCategory;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((ProfilerStat) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(StatName, _serializedCategory);
+        }
+
+        public static bool operator ==(ProfilerStat left, ProfilerStat right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(ProfilerStat left, ProfilerStat right)
+        {
+            return !Equals(left, right);
         }
     }
     
