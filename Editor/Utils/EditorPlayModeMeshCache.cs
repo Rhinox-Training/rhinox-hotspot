@@ -11,7 +11,7 @@ namespace Hotspot.Editor
 #endif
     public static class EditorPlayModeMeshCache
     {
-        private static Dictionary<MeshFilter, Vector3[]> _vertexCache;
+        private static Dictionary<Mesh, Vector3[]> _vertexCache;
 
         static EditorPlayModeMeshCache()
         {
@@ -23,7 +23,7 @@ namespace Hotspot.Editor
             if (obj == PlayModeStateChange.EnteredPlayMode)
             {
                 if (_vertexCache == null)
-                    _vertexCache = new Dictionary<MeshFilter, Vector3[]>();
+                    _vertexCache = new Dictionary<Mesh, Vector3[]>();
                 else
                     _vertexCache.Clear();
 
@@ -37,7 +37,10 @@ namespace Hotspot.Editor
                     if (sharedMesh.isReadable)
                         continue;
 
-                    _vertexCache.Add(filter, sharedMesh.vertices.ToArray());
+                    if (_vertexCache.ContainsKey(sharedMesh))
+                        continue;
+
+                    _vertexCache.Add(sharedMesh, sharedMesh.vertices.ToArray());
                 }
 
             }
@@ -56,8 +59,8 @@ namespace Hotspot.Editor
             if (filter.sharedMesh != null && filter.sharedMesh.isReadable)
                 return filter.sharedMesh.vertices;
 
-            if (_vertexCache != null && _vertexCache.ContainsKey(filter))
-                return _vertexCache[filter];
+            if (_vertexCache != null && _vertexCache.ContainsKey(filter.sharedMesh))
+                return _vertexCache[filter.sharedMesh];
             return Array.Empty<Vector3>();
         }
     }
