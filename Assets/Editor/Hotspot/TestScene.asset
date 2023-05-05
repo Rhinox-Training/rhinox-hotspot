@@ -21,13 +21,16 @@ MonoBehaviour:
       Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
     _name: MainCameraPoseApplier
   PoseApplier:
-    rid: 8235480174864629762
+    rid: 9169774265395314688
   Entries:
   - rid: 8235480153647480839
   - rid: 9169774196034633731
+  - rid: 9169774265395314691
+  - rid: 9169774265395314692
   Statistics:
   - rid: 9169774246337183745
   - rid: 9169774246337183746
+  - rid: 9169774265395314693
   references:
     version: 2
     RefIds:
@@ -39,8 +42,6 @@ MonoBehaviour:
         CameraPose:
           position: {x: 13.418335, y: 12.54343, z: -4.7667685}
           rotation: {x: -0.16848235, y: 0.6050567, z: -0.13295996, w: -0.7667084}
-    - rid: 8235480174864629762
-      type: {class: MainCameraPoseApplier, ns: Hotspot, asm: com.rhinox.open.hotspot}
     - rid: 9169774196034633731
       type: {class: MovingViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
@@ -60,3 +61,32 @@ MonoBehaviour:
       type: {class: ShadersRenderedStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
         Filter: 0
+    - rid: 9169774265395314688
+      type: {class: MainCameraPoseApplier, ns: Hotspot, asm: com.rhinox.open.hotspot}
+    - rid: 9169774265395314691
+      type: {class: MovingViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        Name: 
+        Duration: 5
+        CameraStartPose:
+          position: {x: 0, y: 0, z: 0}
+          rotation: {x: 0, y: 0, z: 0, w: 0}
+        CameraEndPose:
+          position: {x: 0, y: 0, z: 0}
+          rotation: {x: 0, y: 0, z: 0, w: 0}
+    - rid: 9169774265395314692
+      type: {class: MovingViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        Name: 
+        Duration: 5
+        CameraStartPose:
+          position: {x: 0, y: 0, z: 0}
+          rotation: {x: 0, y: 0, z: 0, w: 0}
+        CameraEndPose:
+          position: {x: 0, y: 0, z: 0}
+          rotation: {x: 0, y: 0, z: 0, w: 0}
+    - rid: 9169774265395314693
+      type: {class: UnityProfilerStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        Stat:
+          StatName: System Used Memory
