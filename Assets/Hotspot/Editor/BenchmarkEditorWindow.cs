@@ -33,6 +33,7 @@ namespace Hotspot.Editor
         private Benchmark _benchmark;
         private Vector2 _scrollPositionStats;
         private BenchmarkResultEntry[] _resultsCache;
+        private Vector2 _scrollPositionEditor;
         private const string BENCHMARKS_FOLDER = "Assets/Editor/Hotspot";
 
 
@@ -60,6 +61,8 @@ namespace Hotspot.Editor
         protected override void OnGUI()
         {
             base.OnGUI();
+
+            _scrollPositionEditor = EditorGUILayout.BeginScrollView(_scrollPositionEditor);
             if (_benchmarkAsset == null)
             {
                 if (GUILayout.Button("Create Benchmark Asset"))
@@ -133,6 +136,7 @@ namespace Hotspot.Editor
             }
             
             GUILayout.FlexibleSpace();
+            EditorGUILayout.EndScrollView();
         }
 
         private void OnFinished(Benchmark benchmark, IReadOnlyCollection<BenchmarkResultEntry> results)
@@ -189,7 +193,9 @@ namespace Hotspot.Editor
             using (new eUtility.PaddedGUIScope(CustomGUIUtility.Padding * 2.0f))
             {
                 _dropdownField.Draw(GUIContentHelper.TempContent("PoseApplier"));
+                GUILayout.Space(2.0f);
                 _listDrawable.Draw(GUIContent.none);
+                GUILayout.Space(2.0f);
                 _listDrawable2.Draw(GUIContent.none);
             }
         }
