@@ -13,10 +13,10 @@ namespace Hotspot.Editor
     {
         [ForceWideMode, PropertyOrder(-5)]
         public Pose CameraStartPose;
-        
+
         [ForceWideMode, PropertyOrder(-2)]
         public Pose CameraEndPose;
-        
+
         protected override IEnumerator RunBenchmarkCoroutine(Action<float> progressCallback = null)
         {
             CameraStartPose.Validate();
@@ -28,11 +28,11 @@ namespace Hotspot.Editor
                 progressCallback?.Invoke(1.0f);
                 yield break;
             }
-            
+
             ApplyPoseToCamera(CameraStartPose);
             progressCallback?.Invoke(0.0f);
             yield return new WaitForEndOfFrame();
-            
+
             float progress = 0.0f;
             while (progress < Duration)
             {
@@ -49,25 +49,25 @@ namespace Hotspot.Editor
             ApplyPoseToCamera(CameraEndPose);
             progressCallback?.Invoke(1.0f);
         }
-        
+
         [ButtonGroup("Group1", order: -4), Button, EnableIf(nameof(_shouldEnableAlignWithViewButton))]
         public void AlignWithView()
         {
             CameraStartPose = SceneView.lastActiveSceneView.camera.transform.GetWorldPose();
         }
-        
+
         [ButtonGroup("Group1", order: -4), Button, EnableIf(nameof(_shouldEnableAlignWithSelectionButton))]
         public void AlignWithSelectedObject()
         {
             CameraStartPose = Selection.activeGameObject.transform.GetWorldPose();
         }
-        
+
         [ButtonGroup("Group2", order: -1), Button("Align With View"), EnableIf(nameof(_shouldEnableAlignWithViewButton))]
         public void AlignWithView2()
         {
             CameraEndPose = SceneView.lastActiveSceneView.camera.transform.GetWorldPose();
         }
-        
+
         [ButtonGroup("Group2", order: -1), Button("Align With Selected Object"), EnableIf(nameof(_shouldEnableAlignWithSelectionButton))]
         public void AlignWithSelectedObject2()
         {
@@ -75,7 +75,7 @@ namespace Hotspot.Editor
         }
 
         private bool _shouldEnableAlignWithViewButton => SceneView.lastActiveSceneView != null;
-        
+
 
         private bool _shouldEnableAlignWithSelectionButton
         {

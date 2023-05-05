@@ -24,18 +24,18 @@ namespace Hotspot.Editor
                 CameraPose.rotation * Quaternion.AngleAxis(MinRelativeYawDegrees, Vector3.up));
             Pose endPose = new Pose(CameraPose.position,
                 CameraPose.rotation * Quaternion.AngleAxis(MaxRelativeYawDegrees, Vector3.up));
-            
+
             if (Duration <= float.Epsilon)
             {
                 ApplyPoseToCamera(endPose);
                 progressCallback?.Invoke(1.0f);
                 yield break;
             }
-            
+
             ApplyPoseToCamera(startPose);
             progressCallback?.Invoke(0.0f);
             yield return new WaitForEndOfFrame();
-            
+
             float progress = 0.0f;
             while (progress < Duration)
             {
