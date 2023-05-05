@@ -19,6 +19,9 @@ namespace Hotspot.Editor
         
         protected override IEnumerator RunBenchmarkCoroutine(Action<float> progressCallback = null)
         {
+            CameraStartPose.Validate();
+            CameraEndPose.Validate();
+            
             if (Duration <= float.Epsilon)
             {
                 ApplyPoseToCamera(CameraEndPose);
