@@ -27,7 +27,6 @@ namespace Hotspot.Editor
         [SerializeReference]
         public List<BaseBenchmarkStatistic> Statistics;
 
-        [ContextMenu("Force Generate")]
         private void OnPoseApplierTypeChanged()
         {
             if (PoseApplierType == null)
