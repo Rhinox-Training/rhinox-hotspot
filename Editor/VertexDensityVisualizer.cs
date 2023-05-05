@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Rhinox.Utilities.Editor;
 using Rhinox.Lightspeed;
 using Hotspot.Editor;
-using static PlasticGui.PlasticTableColumn;
+//using static PlasticGui.PlasticTableColumn;
 
 #if UNITY_EDITOR
 using Rhinox.GUIUtils.Editor;
@@ -25,7 +25,6 @@ namespace Rhinox.Hotspot.Editor
 
         private static float _minOctreeCubeSize = 1f;
 
-        private float _biggest = 0f;
         private Octree _tree = null;
         private DenseVertexSpotWindow _denseVertexSpotInfoWindow = null;
 
@@ -38,14 +37,14 @@ namespace Rhinox.Hotspot.Editor
 
         protected override string GetMenuPath() => _menuItemPath;
 
-        private void VisualizeVertices()
+        private void CreateOctree()
         {
             //FindObjectsOfType is only loaded and active
             //FindObjectsOfTypeAll also includes non-active
             var renderers = Object.FindObjectsOfType<MeshRenderer>();
             var filters = Object.FindObjectsOfType<MeshFilter>();
 
-            if (renderers.Length == 0)
+            if (renderers.Length == 0 || filters.Length == 0)
                 return;
 
             Bounds sceneBound = new Bounds();
@@ -55,8 +54,8 @@ namespace Rhinox.Hotspot.Editor
                     sceneBound.Encapsulate(meshRenderer.bounds);
             }
 
-            _biggest = Mathf.Max(Mathf.Max(sceneBound.size.x, sceneBound.size.y), sceneBound.size.z);
-            sceneBound.size = new Vector3(_biggest, _biggest, _biggest);
+            float biggestSide = Mathf.Max(Mathf.Max(sceneBound.size.x, sceneBound.size.y), sceneBound.size.z);
+            sceneBound.size = new Vector3(biggestSide, biggestSide, biggestSide);
 
             _tree = new Octree(sceneBound, _MaxVerticesPerCube, _minOctreeCubeSize);
 
@@ -79,10 +78,7 @@ namespace Rhinox.Hotspot.Editor
         protected override void OnSelectionChanged()
         {
             if (_denseVertexSpotInfoWindow != null)
-            {
                 _denseVertexSpotInfoWindow.UpdateTreshold(_MaxVerticesPerCube);
-            }
-
         }
 
         protected override void OnGUI()
@@ -110,7 +106,7 @@ namespace Rhinox.Hotspot.Editor
 
             if (GUILayout.Button("Calculate and visualize"))
             {
-                VisualizeVertices();
+                CreateOctree();
             }
 
             GUILayout.Space(5f);
@@ -139,7 +135,7 @@ namespace Rhinox.Hotspot.Editor
         {
             if (tree.children == null)
             {
-                //check if cube center is too fam from camera, if so DISCARD IT
+                //check if cube center is too far from camera, if so DISCARD IT
                 if (tree.VertexCount > _MaxVerticesPerCube &&
                     (tree._bounds.center.SqrDistanceTo(SceneView.currentDrawingSceneView.camera.transform.position)) <= _cubeViewDistance)
                 {

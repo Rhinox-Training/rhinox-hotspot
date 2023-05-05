@@ -20,7 +20,7 @@ namespace Hotspot.Editor
 
         private static void OnPlayModeStateChanged(PlayModeStateChange obj)
         {
-            if (obj == PlayModeStateChange.ExitingEditMode)
+            if (obj == PlayModeStateChange.EnteredPlayMode)
             {
                 if (_vertexCache == null)
                     _vertexCache = new Dictionary<MeshFilter, Vector3[]>();
