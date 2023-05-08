@@ -14,7 +14,7 @@ namespace Hotspot.Editor
     }
     
     [Serializable]
-    public class ShadersRenderedStatistic: ViewedObjectBenchmarkStatistic
+    public class ShadersRenderedStatistic : ViewedObjectBenchmarkStatistic
     {
         public ShaderRendererFilter Filter = ShaderRendererFilter.Instances;
         
@@ -22,7 +22,7 @@ namespace Hotspot.Editor
 
         protected override void HandleObjectsChanged(ICollection<Renderer> visibleRenderers)
         {
-            var materials = visibleRenderers.SelectMany(x => x.sharedMaterials);
+            var materials = visibleRenderers.SelectMany(x => x.sharedMaterials).Where(x => x != null);
 
             switch (Filter)
             {
@@ -42,7 +42,7 @@ namespace Hotspot.Editor
 
         private IEnumerable<Shader> GetVariants(IEnumerable<Material> materials)
         {
-            return materials.DistinctBy(x => x.shader.GetHashCode() ^ GetHashCode(x.shaderKeywords)).Select(x => x.shader);
+            return materials.Where(x => x.shader != null).DistinctBy(x => x.shader.GetHashCode() ^ GetHashCode(x.shaderKeywords)).Select(x => x.shader);
         }
 
         private static int GetHashCode(string[] shaderKeywords)
