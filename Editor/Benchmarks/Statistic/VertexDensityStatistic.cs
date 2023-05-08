@@ -4,6 +4,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
+using Rhinox.Lightspeed;
 
 namespace Hotspot.Editor
 {
@@ -94,9 +96,7 @@ namespace Hotspot.Editor
 
         protected override void HandleObjectsChanged(ICollection<Renderer> visibleRenderers)
         {
-
-
-            //throw new NotImplementedException();
+            _cubesInViewCount = _tree.GetUniqueHotSpotCubes(visibleRenderers);
         }
 
         protected override float SampleStatistic()
@@ -113,15 +113,14 @@ namespace Hotspot.Editor
         }
     }
 
-
     public class OctreeStatistic
     {
-        public OctreeStatistic[] children { get; private set; }
+        public OctreeStatistic[] _children { get; private set; }
         public Bounds _bounds { get; private set; }
         public int VertexCount => _vertices.Count;
 
 
-        private Renderer _renderer = null;
+        private HashSet<Renderer> _renderers = null;
         private List<Vector3> _vertices;
         private readonly float _minSize;
         private readonly int _maxPoints;
@@ -132,50 +131,83 @@ namespace Hotspot.Editor
             _bounds = bounds;
             _maxPoints = maxPoints;
             _vertices = new List<Vector3>();
+            _renderers = new HashSet<Renderer>();
         }
 
-        public void Insert(Vector3 point, Renderer renderer)
+        //public List<Bounds>
+        public int GetUniqueHotSpotCubes(in ICollection<Renderer> renderList)
         {
-            if (children != null)
+            int count = 0;
+
+            if (_children != null)
+            {
+                foreach (var child in _children)
+                {
+                    count += child.GetUniqueHotSpotCubes(renderList);
+                }
+            }
+            else
+            {
+                //if the spot is actually a hotspot and
+                //if the cube's render list contains one of the renderers from the visible renderer list,
+                //then this cube should count towards the visible cube count.
+                //convert bool to int because, true is 1 and false is 0.
+                return Convert.ToInt32(_vertices.Count > _maxPoints && _renderers.ContainsAny(renderList));
+            }
+
+            return count;
+        }
+
+        public void Insert(Vector3 point, Renderer renderer = null)
+        {
+            if (_children != null)
             {
                 int index = GetChildIndex(point);
-                children[index].Insert(point, renderer);
+                _children[index].Insert(point, renderer);
                 return;
             }
 
             _vertices.Add(point);
-            _renderer = renderer;
+
+            if (renderer != null)
+                _renderers.Add(renderer);
+
+            //_renderers.AddUnique = renderer;//redundant function?
 
             if (_vertices.Count > _maxPoints && _bounds.size.x > _minSize)
-            {
                 Split(_minSize);
-            }
         }
 
         private void Split(float minSize)
         {
-            children = new OctreeStatistic[8];
+            _children = new OctreeStatistic[8];
 
             float childSize = _bounds.size.x / 2f;
             float offset = _bounds.size.x / 4f;
 
-            children[0] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[1] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[2] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[3] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[4] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[5] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[6] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[7] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[0] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[1] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[2] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[3] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[4] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[5] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[6] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[7] = new OctreeStatistic(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
 
             for (int i = _vertices.Count - 1; i >= 0; i--)
             {
                 int index = GetChildIndex(_vertices[i]);
-                children[index].Insert(_vertices[i], _renderer);
+                _children[index].Insert(_vertices[i]);
+                _children[index].AddRenderers(_renderers);
                 _vertices.RemoveAt(i);
             }
 
-            _renderer = null;
+            _renderers.Clear();// = null;
+        }
+
+        private void AddRenderers(ICollection<Renderer> renderers)
+        {
+            _renderers.AddRange(renderers);
         }
 
         private int GetChildIndex(Vector3 point)
@@ -194,4 +226,6 @@ namespace Hotspot.Editor
             return index;
         }
     }
+
+
 }
