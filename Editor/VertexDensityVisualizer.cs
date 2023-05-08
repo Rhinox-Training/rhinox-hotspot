@@ -14,16 +14,17 @@ namespace Rhinox.Hotspot.Editor
 {
     public class VertexDensityVisualizer : CustomSceneOverlayWindow<VertexDensityVisualizer>
     {
+        protected override string Name => "Vertex Density Visualizer";
         private const string _menuItemPath = WindowHelper.ToolsPrefix + "Show Vertex Density Visualizer";
+
         private const float _minCubeDistance = 10f;
         private const float _maxCubeDistance = 200f;
-        private static float _cubeViewDistance = 100f;
+        private static PersistentValue<float> _cubeViewDistance;// = 100f;
 
-        private static int _MaxVerticesPerCube = 500;
         private const int _maxVerticesMultiplier = 10;
-        protected override string Name => "Vertex Density Visualizer";
+        private static PersistentValue<int> _MaxVerticesPerCube;//= 500;
+        private static PersistentValue<float> _minOctreeCubeSize;// = 1f;
 
-        private static float _minOctreeCubeSize = 1f;
 
         private Octree _tree = null;
         private DenseVertexSpotWindow _denseVertexSpotInfoWindow = null;
@@ -36,6 +37,15 @@ namespace Rhinox.Hotspot.Editor
         public static bool SetupValidateWindow() => Window.HandleValidateWindow();
 
         protected override string GetMenuPath() => _menuItemPath;
+
+        protected override void Initialize()
+        {
+            _MaxVerticesPerCube = PersistentValue<int>.Create(typeof(VertexDensityVisualizer), nameof(_MaxVerticesPerCube), 500);
+            _minOctreeCubeSize = PersistentValue<float>.Create(typeof(VertexDensityVisualizer), nameof(_minOctreeCubeSize), 1f);
+            _cubeViewDistance = PersistentValue<float>.Create(typeof(VertexDensityVisualizer), nameof(_cubeViewDistance), 100f);
+
+            base.Initialize();
+        }
 
         private void CreateOctree()
         {
@@ -86,24 +96,27 @@ namespace Rhinox.Hotspot.Editor
             GUILayout.Space(5f);
             GUILayout.BeginVertical();
 
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Max vertices per cube:");
-            GUILayout.Space(5f);
-            int.TryParse(GUILayout.TextField($"{_MaxVerticesPerCube}", GUILayout.Width(75f)), out _MaxVerticesPerCube);
-            if (_MaxVerticesPerCube <= 0)
-                _MaxVerticesPerCube = 1;
-            GUILayout.EndHorizontal();
+            //GUILayout.BeginHorizontal();
+            //GUILayout.Label("Max vertices per cube:");
+            //GUILayout.Space(5f);
 
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Min cube size:");
-            float.TryParse(GUILayout.TextField($"{_minOctreeCubeSize}", GUILayout.Width(75f)), out _minOctreeCubeSize);
+            _MaxVerticesPerCube.ShowField("Max vertices per cube:");
+            //int.TryParse(GUILayout.TextField($"{_MaxVerticesPerCube}", GUILayout.Width(75f)), out _MaxVerticesPerCube);
+            if (_MaxVerticesPerCube <= 0)
+                _MaxVerticesPerCube.Set(1);
+            //GUILayout.EndHorizontal();
+
+            //GUILayout.BeginHorizontal();
+            //GUILayout.Label("Min cube size:");
+            //float.TryParse(GUILayout.TextField($"{_minOctreeCubeSize}", GUILayout.Width(75f)), out _minOctreeCubeSize);
+            _minOctreeCubeSize.ShowField("Min cube size:");
             if (_minOctreeCubeSize <= 0)
-                _minOctreeCubeSize = 0.001f;
-            GUILayout.EndHorizontal();
+                _minOctreeCubeSize.Set(0.001f);
+            //GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Cube render distance:");
-            _cubeViewDistance = GUILayout.HorizontalSlider(_cubeViewDistance, _minCubeDistance, _maxCubeDistance, GUILayout.Width(75f));
+            _cubeViewDistance.Set(GUILayout.HorizontalSlider(_cubeViewDistance, _minCubeDistance, _maxCubeDistance, GUILayout.Width(75f)));
             GUILayout.EndHorizontal();
 
             GUILayout.Space(5f);
@@ -167,6 +180,12 @@ namespace Rhinox.Hotspot.Editor
                 return;
 
             DrawChildren(_tree);
+
+            if (_tree.children != null)
+            {
+                var recto = BoundsExtensions.ToScreenSpace(_tree.children[0]._bounds, Camera.main);
+                GUI.Label(recto, "");
+            }
         }
     }
 
