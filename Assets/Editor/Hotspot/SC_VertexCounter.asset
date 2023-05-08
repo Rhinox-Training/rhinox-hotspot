@@ -61,21 +61,21 @@ MonoBehaviour:
         Name: Start
         Duration: 5
         CameraPose:
-          position: {x: 0, y: 5, z: 0}
-          rotation: {x: 0, y: 0, z: 0, w: 0}
+          position: {x: 0, y: 5, z: -10}
+          rotation: {x: 0, y: 0, z: 0, w: 1}
     - rid: 2224544124573319177
       type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
         Name: End
         Duration: 5
         CameraPose:
-          position: {x: 0, y: 5, z: -10}
-          rotation: {x: 0, y: 0, z: 0, w: 0}
+          position: {x: 0, y: 5, z: 30}
+          rotation: {x: 0, y: 0, z: 0, w: 1}
     - rid: 2224544141372817411
       type: {class: MainCameraPoseApplier, ns: Hotspot, asm: com.rhinox.open.hotspot}
     - rid: 2224544141372817415
       type: {class: VertexDensityStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
         _mode: 0
-        _MaxVerticesPerCube: 500
+        _MaxVerticesPerCube: 1
         _minOctreeCubeSize: 1
