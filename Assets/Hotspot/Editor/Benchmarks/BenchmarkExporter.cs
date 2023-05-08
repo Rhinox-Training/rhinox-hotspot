@@ -43,7 +43,7 @@ namespace Hotspot.Editor
                     }
                 }
 
-                table.Rows.Add(sortedResults.SelectMany(x => new[] { x.Average, x.StdDev }));
+                table.Rows.Add(sortedResults.SelectMany(x => new[] { x.Average.ToString(), x.StdDev.ToString() }).ToArray());
                 
             }
             else
@@ -54,7 +54,7 @@ namespace Hotspot.Editor
                     table.Columns.Add(string.Join("/", result.Name, "AVERAGE"));
                     table.Columns.Add(string.Join("/", result.Name, "STD.DEV"));
                 }
-                table.Rows.Add(benchmark.Results.SelectMany(x => new[] { x.Average, x.StdDev }));
+                table.Rows.Add(benchmark.Results.SelectMany(x => new[] { x.Average.ToString(), x.StdDev.ToString() }).ToArray());
             }
             
             string csvFileStr = table.ToCsv();
