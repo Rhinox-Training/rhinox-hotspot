@@ -46,6 +46,13 @@ namespace Hotspot.Editor
             _benchmarkProgress = 0.0f;
             _benchmarkRunning = true;
             _benchmarkCoroutine = ManagedCoroutine.Begin(RunBenchmarkCoroutine());
+            _benchmarkCoroutine.OnFailed += OnFailed;
+        }
+
+        private void OnFailed(Exception e)
+        {
+            PLog.Error<HotspotLogger>(e.ToString());
+            _benchmarkRunning = false;
         }
 
         public void TogglePause()
