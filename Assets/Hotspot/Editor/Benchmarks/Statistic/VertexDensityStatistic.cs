@@ -23,6 +23,8 @@ namespace Hotspot.Editor
         public float _minOctreeCubeSize = 1f;
 
         private int _cubesInViewCount = 0;
+        private float _verticesPerPixel = 0;
+
         private static VertexOctreeBuilder _octreeBuilder;
 
         public override bool StartNewRun()
@@ -58,7 +60,7 @@ namespace Hotspot.Editor
                 case VertexDensityMode.Simple:
                     return "Amount of Hotspots in view";
                 case VertexDensityMode.Advanced:
-                    return "";
+                    return "Vertices per Pixel";
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -66,7 +68,15 @@ namespace Hotspot.Editor
 
         protected override void HandleObjectsChanged(ICollection<Renderer> visibleRenderers)
         {
-            _cubesInViewCount = _octreeBuilder.GetUniqueHotSpotCubes(visibleRenderers);
+            switch (_mode)
+            {
+                case VertexDensityMode.Simple:
+                    _cubesInViewCount = _octreeBuilder.GetUniqueHotSpotCubes(visibleRenderers);
+                    break;
+                case VertexDensityMode.Advanced:
+                    _verticesPerPixel = _octreeBuilder.GetVerticesPerPixel(visibleRenderers);
+                    break;
+            }
         }
 
         protected override float SampleStatistic()
@@ -76,7 +86,7 @@ namespace Hotspot.Editor
                 case VertexDensityMode.Simple:
                     return _cubesInViewCount;
                 case VertexDensityMode.Advanced:
-                    return 0;
+                    return _verticesPerPixel;
                 default:
                     throw new ArgumentOutOfRangeException();
             }

@@ -9,6 +9,7 @@ namespace Hotspot.Editor
     public abstract class ViewedObjectBenchmarkStatistic : BaseMeasurableBenchmarkStatistic
     {
         private static RenderedObjectTracker _objectTracker;
+        private int _objectTrackerUsers;
 
         public override bool StartNewRun()
         {
@@ -17,10 +18,12 @@ namespace Hotspot.Editor
             
             if (_objectTracker == null)
             {
+                _objectTrackerUsers = 0;
                 _objectTracker = new RenderedObjectTracker();
                 _objectTracker.Initialize();
-                _objectTracker.VisibleRenderersChanged += OnVisibleObjectsChanged;
             }
+            _objectTracker.VisibleRenderersChanged += OnVisibleObjectsChanged;
+            ++_objectTrackerUsers;
             return true;
         }
 
@@ -29,9 +32,13 @@ namespace Hotspot.Editor
             base.CleanUp();
             if (_objectTracker != null)
             {
+                --_objectTrackerUsers;
                 _objectTracker.VisibleRenderersChanged -= OnVisibleObjectsChanged;
-                _objectTracker.Terminate();
-                _objectTracker = null;
+                if (_objectTrackerUsers == 0)
+                {
+                    _objectTracker.Terminate();
+                    _objectTracker = null;
+                }
             }
         }
 

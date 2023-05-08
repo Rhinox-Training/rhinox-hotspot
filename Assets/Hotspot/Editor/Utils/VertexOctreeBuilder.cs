@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.RendererUtils;
 
 public class VertexOctreeBuilder
 {
@@ -58,6 +59,15 @@ public class VertexOctreeBuilder
         return _tree.VertexCount > 0 || _tree._children != null;
     }
 
+    public void Terminate()
+    {
+        if (_tree != null)
+        {
+            _tree.Cleanup();
+            _tree = null;
+        }
+    }
+
     public int GetUniqueHotSpotCubes(ICollection<Renderer> visibleRenderers)
     {
         if (_tree == null)
@@ -66,13 +76,12 @@ public class VertexOctreeBuilder
         return _tree.GetUniqueHotSpotCubes(visibleRenderers);
     }
 
-    internal void Terminate()
+    public float GetVerticesPerPixel(ICollection<Renderer> visibleRenderers)
     {
-        if (_tree != null)
-        {
-            _tree.Cleanup();
-            _tree = null;
-        }
+        if (_tree == null)
+            return 0;
+
+        return _tree.GetVerticesPerPixel(visibleRenderers);
     }
 
     public class OctreeNode
@@ -96,28 +105,18 @@ public class VertexOctreeBuilder
             _renderers = new HashSet<Renderer>();
         }
 
-        //public List<Bounds>
-        public int GetUniqueHotSpotCubes(in ICollection<Renderer> renderList)
+        public void Cleanup()
         {
-            int count = 0;
-
             if (_children != null)
             {
                 foreach (var child in _children)
                 {
-                    count += child.GetUniqueHotSpotCubes(renderList);
+                    child.Cleanup();
                 }
             }
-            else
-            {
-                //if the spot is actually a hotspot and
-                //if the cube's render list contains one of the renderers from the visible renderer list,
-                //then this cube should count towards the visible cube count.
-                //convert bool to int because, true is 1 and false is 0.
-                return Convert.ToInt32(_vertices.Count > _maxPoints && _renderers.ContainsAny(renderList));
-            }
 
-            return count;
+            _renderers?.Clear();
+            _vertices?.Clear();
         }
 
         public void Insert(Vector3 point, Renderer renderer = null)
@@ -133,8 +132,6 @@ public class VertexOctreeBuilder
 
             if (renderer != null)
                 _renderers.Add(renderer);
-
-            //_renderers.AddUnique = renderer;//redundant function?
 
             if (_vertices.Count > _maxPoints && _bounds.size.x > _minSize)
                 Split(_minSize);
@@ -164,21 +161,7 @@ public class VertexOctreeBuilder
                 _vertices.RemoveAt(i);
             }
 
-            _renderers.Clear();// = null;
-        }
-
-        public void Cleanup()
-        {
-            if (_children != null)
-            {
-                foreach (var child in _children)
-                {
-                    child.Cleanup();
-                }
-            }
-
-            _renderers?.Clear();
-            _vertices?.Clear();
+            _renderers.Clear();
         }
 
         private void AddRenderers(ICollection<Renderer> renderers)
@@ -201,6 +184,62 @@ public class VertexOctreeBuilder
 
             return index;
         }
-    }
 
+        public int GetUniqueHotSpotCubes(in ICollection<Renderer> visibleRenderers)
+        {
+            int count = 0;
+
+            if (_children != null)
+            {
+                foreach (var child in _children)
+                {
+                    count += child.GetUniqueHotSpotCubes(visibleRenderers);
+                }
+            }
+            else
+            {
+                //if the spot is actually a hotspot and
+                //if the cube's render list contains one of the renderers from the visible renderer list,
+                //then this cube should count towards the visible cube count.
+                //convert bool to int because, true is 1 and false is 0.
+                return Convert.ToInt32(_vertices.Count > _maxPoints && _renderers.ContainsAny(visibleRenderers));
+            }
+
+            return count;
+        }
+
+        public bool IsHotSpot()
+        {
+            return _vertices.Count > _maxPoints;
+        }
+
+        public float GetVerticesPerPixel(in ICollection<Renderer> visibleRenderers)
+        {
+            float avg = 0f;
+
+            if (_children != null)
+            {
+                int count = 0;
+                foreach (var child in _children)
+                {
+                    //Check if the evaluated node is a hotspot, so that that only counts towards the average
+                    if (child.IsHotSpot())
+                        ++count;
+
+                    avg += child.GetVerticesPerPixel(visibleRenderers);
+                }
+
+                if (count > 0)
+                    avg /= count;
+            }
+            else
+            {
+                //Check if this node is visible in the frustum
+                if (_renderers.ContainsAny(visibleRenderers))
+                    return _vertices.Count / BoundsExtensions.GetScreenPixels(_bounds, Camera.main);
+            }
+
+            return avg;
+        }
+    }
 }
