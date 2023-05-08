@@ -4,7 +4,7 @@ namespace Hotspot.Editor
 {
     public class SimpleFramerateStatistic : BaseMeasurableBenchmarkStatistic
     {
-        protected override string GetStatName()
+        protected override string GetStatNameInner()
         {
             return "Framerate";
         }

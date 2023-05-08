@@ -83,7 +83,7 @@ namespace Hotspot.Editor
 
         }
 
-        protected override string GetStatName()
+        protected override string GetStatNameInner()
         {
             switch (_mode)
             {

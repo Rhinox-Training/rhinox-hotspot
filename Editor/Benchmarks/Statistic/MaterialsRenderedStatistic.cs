@@ -27,7 +27,7 @@ namespace Hotspot.Editor
             return (_materials != null ? _materials.Length : 0);
         }
 
-        protected override string GetStatName()
+        protected override string GetStatNameInner()
         {
             return Unique ? "Materials Rendered (Unique)" : "Materials Rendered (Instances)";
         }

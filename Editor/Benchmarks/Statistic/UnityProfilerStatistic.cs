@@ -11,9 +11,9 @@ namespace Hotspot.Editor
     public static class UnityDebugProfilerStats
     {
         public static ProfilerStat MainThreadTime = new ProfilerStat(ProfilerCategory.Internal, "Main Thread", 15);
-        public static ProfilerStat RenderingUsage = new ProfilerStat(ProfilerCategory.Render, "Rendering Time");
-        public static ProfilerStat ScriptsUsage = new ProfilerStat(ProfilerCategory.Scripts, "Scripts");
-        public static ProfilerStat AnimationUsage = new ProfilerStat(ProfilerCategory.Scripts, "Animation");
+        public static ProfilerStat RenderingUsage = new ProfilerStat(ProfilerCategory.Render, "Camera.Render");
+        public static ProfilerStat ScriptsUsage = new ProfilerStat(ProfilerCategory.Scripts, "");
+        public static ProfilerStat AnimationUsage = new ProfilerStat(ProfilerCategory.Internal, "Animation");
         public static ProfilerStat UsedSystemMemory = new ProfilerStat(ProfilerCategory.Memory, "System Used Memory");
         public static ProfilerStat GCReservedMemory = new ProfilerStat(ProfilerCategory.Memory, "GC Reserved Memory");
         public static ProfilerStat MaterialCount = new ProfilerStat(ProfilerCategory.Memory, "Material Count");
@@ -69,7 +69,6 @@ namespace Hotspot.Editor
             SampleCapacity = 1;
             OnBeforeSerialize();
         }
-
 
         public void OnBeforeSerialize()
         {
@@ -127,6 +126,16 @@ namespace Hotspot.Editor
     {
         private ProfilerRecorder _recorder;
 
+        public override UnitConverter Converter
+        {
+            get
+            {
+                if (Stat != null)
+                    return GetConverter(Stat);
+                return base.Converter;
+            }
+        }
+
         [ValueDropdown(nameof(GetOptions))]
         public ProfilerStat Stat;
 
@@ -147,7 +156,7 @@ namespace Hotspot.Editor
             return true;
         }
 
-        protected override string GetStatName()
+        protected override string GetStatNameInner()
         {
             return Stat.StatName;
         }
@@ -171,6 +180,15 @@ namespace Hotspot.Editor
         protected ValueDropdownItem[] GetOptions()
         {
             return UnityDebugProfilerStats.All.Select(x => new ValueDropdownItem(x.StatName, x)).ToArray();
+        }
+
+        private UnitConverter GetConverter(ProfilerStat stat)
+        {
+            if (Stat == UnityDebugProfilerStats.MainThreadTime)
+                return UnitConverter.ThreadMillisecondConverter;
+            else if (Stat.Category == ProfilerCategory.Memory)
+                return UnitConverter.MegabyteConverter;
+            return UnitConverter.DefaultConverter;
         }
     }
 }
