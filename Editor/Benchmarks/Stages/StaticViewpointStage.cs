@@ -21,12 +21,13 @@ namespace Hotspot.Editor
 
             ApplyPoseToCamera(CameraPose);
             float progress = 0.0f;
-            var enumeration = SplitByIncrement(Duration).Enumerate();
-            foreach (float increment in enumeration)
+
+            while (progress < Duration)
             {
-                progress += increment;
+                float incrementTime = Time.deltaTime;
+                progress += incrementTime;
                 progressCallback?.Invoke(progress / Duration);
-                yield return new WaitForSeconds(increment);
+                yield return new WaitForEndOfFrame();
             }
         }
 
