@@ -34,6 +34,9 @@ namespace Hotspot.Editor
         private Vector2 _scrollPositionStats;
         private BenchmarkResultEntry[] _resultsCache;
         private Vector2 _scrollPositionEditor;
+        private string _exportPath = "Hotspots/Exports/default.csv";
+        private bool _autoExport;
+
         private const string BENCHMARKS_FOLDER = "Assets/Editor/Hotspot";
 
 
@@ -135,6 +138,19 @@ namespace Hotspot.Editor
                 }
             }
             
+            GUILayout.Space(4.0f);
+            
+            CustomEditorGUI.Title("Exports");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Export File:");
+            _exportPath = GUILayout.TextField(_exportPath);
+            GUILayout.EndHorizontal();
+            _autoExport = GUILayout.Toggle(_autoExport, "Automatic Exports");
+            if (GUILayout.Button("Export"))
+            {
+                BenchmarkExporter.Export(_benchmark, _exportPath);
+            }
+            
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndScrollView();
         }
@@ -142,6 +158,8 @@ namespace Hotspot.Editor
         private void OnFinished(Benchmark benchmark, IReadOnlyCollection<BenchmarkResultEntry> results)
         {
             _resultsCache = results.ToArray();
+            if (_autoExport)
+                BenchmarkExporter.Export(_benchmark, _exportPath);
         }
 
         private void OnBenchmarkTick()
