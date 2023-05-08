@@ -32,6 +32,7 @@ MonoBehaviour:
   - rid: 2224544124573319174
   - rid: 2224544124573319175
   - rid: 2224544141372817415
+  - rid: 2224544213569896448
   references:
     version: 2
     RefIds:
@@ -78,4 +79,10 @@ MonoBehaviour:
       data:
         _mode: 0
         _MaxVerticesPerCube: 1
+        _minOctreeCubeSize: 1
+    - rid: 2224544213569896448
+      type: {class: VertexDensityStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        _mode: 1
+        _MaxVerticesPerCube: 500
         _minOctreeCubeSize: 1

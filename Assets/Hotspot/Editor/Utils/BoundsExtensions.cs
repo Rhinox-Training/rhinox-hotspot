@@ -1,12 +1,29 @@
+using Rhinox.Lightspeed;
+using System.Linq;
 using UnityEngine;
 
 public static class BoundsExtensions
 {
     public static Rect ToScreenSpace(this Bounds bounds, Camera camera)
     {
-        var origin = camera.WorldToScreenPoint(new Vector3(bounds.min.x, bounds.min.y, 0.0f));
-        var extents = camera.WorldToScreenPoint(new Vector3(bounds.max.x, bounds.min.y, 0.0f));
+        var corners = bounds.GetCorners().Select(x => camera.WorldToScreenPoint(x)).ToArray();
+        Rect screenbounds = new Rect(corners[0], Vector2.zero);
 
-        return new Rect(origin.x, Screen.height - origin.y, extents.x - origin.x, origin.y - extents.y);
+        for (int idx = 1; idx < corners.Length; ++idx)
+        {
+            screenbounds = screenbounds.Encapsulate(corners[idx]);
+        }
+
+        float oldYmin = screenbounds.yMin;
+        screenbounds.yMin = Screen.height - screenbounds.yMax;
+        screenbounds.yMax = Screen.height - oldYmin;
+
+        return screenbounds;
+    }
+
+    public static float GetScreenPixels(this Bounds bounds, Camera camera)
+    {
+        var rect = ToScreenSpace(bounds, camera);
+        return rect.width * rect.height;
     }
 }

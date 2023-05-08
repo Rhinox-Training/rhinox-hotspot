@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Rhinox.Utilities.Editor;
 using Rhinox.Lightspeed;
 using Hotspot.Editor;
-//using static PlasticGui.PlasticTableColumn;
+using Rhinox.Utilities;
 
 #if UNITY_EDITOR
 using Rhinox.GUIUtils.Editor;
@@ -25,8 +25,8 @@ namespace Rhinox.Hotspot.Editor
         private static PersistentValue<int> _MaxVerticesPerCube;//= 500;
         private static PersistentValue<float> _minOctreeCubeSize;// = 1f;
 
-
-        private Octree _tree = null;
+        public static Rect recto;
+        private VertexOctreeBuilder _tree = null;
         private DenseVertexSpotWindow _denseVertexSpotInfoWindow = null;
 
 
@@ -47,44 +47,6 @@ namespace Rhinox.Hotspot.Editor
             base.Initialize();
         }
 
-        private void CreateOctree()
-        {
-            //FindObjectsOfType is only loaded and active
-            //FindObjectsOfTypeAll also includes non-active
-            var renderers = Object.FindObjectsOfType<MeshRenderer>();
-            var filters = Object.FindObjectsOfType<MeshFilter>();
-
-            if (renderers.Length == 0 || filters.Length == 0)
-                return;
-
-            Bounds sceneBound = new Bounds();
-            foreach (MeshRenderer meshRenderer in renderers)
-            {
-                if (!LODRendererCache.IsLOD(meshRenderer))
-                    sceneBound.Encapsulate(meshRenderer.bounds);
-            }
-
-            float biggestSide = Mathf.Max(Mathf.Max(sceneBound.size.x, sceneBound.size.y), sceneBound.size.z);
-            sceneBound.size = new Vector3(biggestSide, biggestSide, biggestSide);
-
-            _tree = new Octree(sceneBound, _MaxVerticesPerCube, _minOctreeCubeSize);
-
-            foreach (MeshFilter meshFilter in filters)
-            {
-                //first check if the meshfilters renderer is and LOD, if so, discard and goto next
-                if (!meshFilter.gameObject.TryGetComponent<Renderer>(out var renderer))
-                    continue;
-
-                if (LODRendererCache.IsLOD(renderer))
-                    continue;
-
-                foreach (var point in meshFilter.sharedMesh.vertices)
-                {
-                    _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point));
-                }
-            }
-        }
-
         protected override void OnSelectionChanged()
         {
             if (_denseVertexSpotInfoWindow != null)
@@ -96,34 +58,26 @@ namespace Rhinox.Hotspot.Editor
             GUILayout.Space(5f);
             GUILayout.BeginVertical();
 
-            //GUILayout.BeginHorizontal();
-            //GUILayout.Label("Max vertices per cube:");
-            //GUILayout.Space(5f);
-
-            _MaxVerticesPerCube.ShowField("Max vertices per cube:");
-            //int.TryParse(GUILayout.TextField($"{_MaxVerticesPerCube}", GUILayout.Width(75f)), out _MaxVerticesPerCube);
+            _MaxVerticesPerCube.ShowField("Max vertices per cube:", GUILayout.Width(230f));
             if (_MaxVerticesPerCube <= 0)
                 _MaxVerticesPerCube.Set(1);
-            //GUILayout.EndHorizontal();
 
-            //GUILayout.BeginHorizontal();
-            //GUILayout.Label("Min cube size:");
-            //float.TryParse(GUILayout.TextField($"{_minOctreeCubeSize}", GUILayout.Width(75f)), out _minOctreeCubeSize);
-            _minOctreeCubeSize.ShowField("Min cube size:");
+            _minOctreeCubeSize.ShowField("Min cube size:", GUILayout.Width(230f));
             if (_minOctreeCubeSize <= 0)
                 _minOctreeCubeSize.Set(0.001f);
-            //GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Cube render distance:");
             _cubeViewDistance.Set(GUILayout.HorizontalSlider(_cubeViewDistance, _minCubeDistance, _maxCubeDistance, GUILayout.Width(75f)));
+            GUILayout.Space(1f);
             GUILayout.EndHorizontal();
 
             GUILayout.Space(5f);
 
             if (GUILayout.Button("Calculate and visualize"))
             {
-                CreateOctree();
+                _tree = new VertexOctreeBuilder(_MaxVerticesPerCube, _minOctreeCubeSize);
+                _tree.CreateOctree();
             }
 
             GUILayout.Space(5f);
@@ -135,7 +89,7 @@ namespace Rhinox.Hotspot.Editor
                     _denseVertexSpotInfoWindow = EditorWindow.GetWindow<DenseVertexSpotWindow>();
 
                     if (_denseVertexSpotInfoWindow == null)
-                        _denseVertexSpotInfoWindow = new DenseVertexSpotWindow();
+                        _denseVertexSpotInfoWindow = ScriptableObject.CreateInstance<DenseVertexSpotWindow>();
 
                     _denseVertexSpotInfoWindow.UpdateTree(_tree);
                     _denseVertexSpotInfoWindow.UpdateTreshold(_MaxVerticesPerCube);
@@ -144,13 +98,12 @@ namespace Rhinox.Hotspot.Editor
                 }
             }
 
-
             GUILayout.EndVertical();
         }
 
-        private void DrawChildren(Octree tree)
+        private void DrawChildren(VertexOctreeBuilder.OctreeNode tree)
         {
-            if (tree.children == null)
+            if (tree._children == null)
             {
                 //check if cube center is too far from camera, if so DISCARD IT
                 if (tree.VertexCount > _MaxVerticesPerCube &&
@@ -160,13 +113,15 @@ namespace Rhinox.Hotspot.Editor
                     {
                         Handles.Label(tree._bounds.center, $"{tree.VertexCount}");
                         Handles.DrawWireCube(tree._bounds.center, tree._bounds.size);
+                        //DebugExt.DebugBounds(tree._bounds, 120f);
+                        recto = BoundsExtensions.ToScreenSpace(tree._bounds, Camera.main);
                     }
                 }
 
                 return;
             }
 
-            foreach (var child in tree.children)
+            foreach (var child in tree._children)
             {
                 DrawChildren(child);
             }
@@ -179,90 +134,7 @@ namespace Rhinox.Hotspot.Editor
             if (_tree == null)
                 return;
 
-            DrawChildren(_tree);
-
-            if (_tree.children != null)
-            {
-                var recto = BoundsExtensions.ToScreenSpace(_tree.children[0]._bounds, Camera.main);
-                GUI.Label(recto, "");
-            }
-        }
-    }
-
-    public class Octree
-    {
-        private readonly float _minSize;
-        private readonly int _maxPoints;
-        public Bounds _bounds { get; private set; }
-
-        public int VertexCount => _vertices.Count;
-
-        private List<Vector3> _vertices;
-        public Octree[] children { get; private set; }
-
-        public Octree(Bounds bounds, int maxPoints, float minOctSize = 0.1f)
-        {
-            _minSize = minOctSize;
-            _bounds = bounds;
-            _maxPoints = maxPoints;
-            _vertices = new List<Vector3>();
-        }
-
-        public void Insert(Vector3 point)
-        {
-            if (children != null)
-            {
-                int index = GetChildIndex(point);
-                children[index].Insert(point);
-                return;
-            }
-
-            _vertices.Add(point);
-
-            if (_vertices.Count > _maxPoints && _bounds.size.x > _minSize)
-            {
-                Split(_minSize);
-            }
-        }
-
-        private void Split(float minSize)
-        {
-            children = new Octree[8];
-
-            float childSize = _bounds.size.x / 2f;
-            float offset = _bounds.size.x / 4f;
-
-            children[0] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[1] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[2] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[3] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[4] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[5] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[6] = new Octree(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            children[7] = new Octree(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-
-            for (int i = _vertices.Count - 1; i >= 0; i--)
-            {
-                int index = GetChildIndex(_vertices[i]);
-                children[index].Insert(_vertices[i]);
-                _vertices.RemoveAt(i);
-            }
-        }
-
-        private int GetChildIndex(Vector3 point)
-        {
-            int index = 0;
-
-            if (point.x > _bounds.center.x)
-                index |= 1;
-
-            if (point.y > _bounds.center.y)
-                index |= 4;
-
-            if (point.z > _bounds.center.z)
-                index |= 2;
-
-            return index;
+            DrawChildren(_tree.Tree);
         }
     }
 }

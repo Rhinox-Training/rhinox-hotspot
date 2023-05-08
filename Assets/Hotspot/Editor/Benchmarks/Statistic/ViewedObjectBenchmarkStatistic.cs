@@ -8,7 +8,7 @@ namespace Hotspot.Editor
     [Serializable]
     public abstract class ViewedObjectBenchmarkStatistic : BaseMeasurableBenchmarkStatistic
     {
-        private RenderedObjectTracker _objectTracker;
+        private static RenderedObjectTracker _objectTracker;
 
         public override bool StartNewRun()
         {
