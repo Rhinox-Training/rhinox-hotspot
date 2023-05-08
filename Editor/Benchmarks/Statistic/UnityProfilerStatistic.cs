@@ -10,9 +10,19 @@ namespace Hotspot.Editor
 {
     public static class UnityDebugProfilerStats
     {
+        public static ProfilerStat MainThreadTime = new ProfilerStat(ProfilerCategory.Internal, "Main Thread", 15);
+        public static ProfilerStat RenderingUsage = new ProfilerStat(ProfilerCategory.Render, "Rendering Time");
+        public static ProfilerStat ScriptsUsage = new ProfilerStat(ProfilerCategory.Scripts, "Scripts");
+        public static ProfilerStat AnimationUsage = new ProfilerStat(ProfilerCategory.Scripts, "Animation");
         public static ProfilerStat UsedSystemMemory = new ProfilerStat(ProfilerCategory.Memory, "System Used Memory");
         public static ProfilerStat GCReservedMemory = new ProfilerStat(ProfilerCategory.Memory, "GC Reserved Memory");
+        public static ProfilerStat MaterialCount = new ProfilerStat(ProfilerCategory.Memory, "Material Count");
+        public static ProfilerStat MeshMemory = new ProfilerStat(ProfilerCategory.Memory, "Mesh Memory");
+        public static ProfilerStat TextureMemory = new ProfilerStat(ProfilerCategory.Memory, "Texture Memory");
+        public static ProfilerStat ObjectCount = new ProfilerStat(ProfilerCategory.Memory, "Object Count");
         public static ProfilerStat BatchesCount = new ProfilerStat(ProfilerCategory.Render, "Batches Count");
+        public static ProfilerStat TrianglesCount = new ProfilerStat(ProfilerCategory.Render, "Triangles Count");
+        public static ProfilerStat VerticesCount = new ProfilerStat(ProfilerCategory.Render, "Vertices Count");
         
         public static ProfilerStat[] All
         {
@@ -20,9 +30,19 @@ namespace Hotspot.Editor
             {
                 return new[]
                 {
+                    MainThreadTime,
+                    RenderingUsage,
+                    ScriptsUsage,
+                    AnimationUsage,
                     UsedSystemMemory,
                     GCReservedMemory,
-                    BatchesCount
+                    MaterialCount,
+                    MeshMemory,
+                    TextureMemory,
+                    ObjectCount,
+                    BatchesCount,
+                    TrianglesCount,
+                    VerticesCount
                 };
             }
         }
@@ -38,12 +58,15 @@ namespace Hotspot.Editor
         [SerializeField, HideInInspector]
         private ushort _serializedCategory;
 
+        public int SampleCapacity = 1;
+
         private FieldInfo _categoryField;
 
-        public ProfilerStat(ProfilerCategory category, string name)
+        public ProfilerStat(ProfilerCategory category, string name, int sampleCapacity = 1)
         {
             Category = category;
             StatName = name;
+            SampleCapacity = 1;
             OnBeforeSerialize();
         }
 
@@ -72,7 +95,7 @@ namespace Hotspot.Editor
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return StatName == other.StatName && _serializedCategory == other._serializedCategory;
+            return StatName == other.StatName && _serializedCategory == other._serializedCategory && SampleCapacity == other.SampleCapacity;
         }
 
         public override bool Equals(object obj)
@@ -85,7 +108,7 @@ namespace Hotspot.Editor
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(StatName, _serializedCategory);
+            return HashCode.Combine(StatName, _serializedCategory, SampleCapacity);
         }
 
         public static bool operator ==(ProfilerStat left, ProfilerStat right)
@@ -110,11 +133,18 @@ namespace Hotspot.Editor
         private bool _disposed;
         private float _sampleCache;
 
-        public override void StartNewRun()
+        public override bool StartNewRun()
         {
-            base.StartNewRun();
+            if (!base.StartNewRun())
+                return false;
+            
             _disposed = false;
-            _recorder = ProfilerRecorder.StartNew(Stat.Category, Stat.StatName);
+
+            if (Stat == null || !UnityDebugProfilerStats.All.Contains(Stat))
+                return false;
+            
+            _recorder = ProfilerRecorder.StartNew(Stat.Category, Stat.StatName, Stat.SampleCapacity);
+            return true;
         }
 
         protected override string GetStatName()
@@ -131,7 +161,7 @@ namespace Hotspot.Editor
 
         protected override float SampleStatistic()
         {
-            if (_disposed)
+            if (_disposed || !_recorder.Valid)
                 return _sampleCache;
 
             _sampleCache = (float)_recorder.LastValue;

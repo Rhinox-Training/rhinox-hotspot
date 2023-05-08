@@ -113,7 +113,7 @@ namespace Hotspot.Editor
                 if (_benchmark != null && _benchmark.IsRunning)
                 {
                     CustomEditorGUI.Title("Statistics");
-                    _scrollPositionStats = GUILayout.BeginScrollView(_scrollPositionStats, false, true);
+                    _scrollPositionStats = GUILayout.BeginScrollView(_scrollPositionStats, false, true, GUILayout.MinHeight(100));
                     _benchmark.DrawLayout();
                     GUILayout.EndScrollView();
                 }

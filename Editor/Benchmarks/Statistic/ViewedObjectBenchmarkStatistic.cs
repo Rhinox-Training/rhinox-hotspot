@@ -10,14 +10,18 @@ namespace Hotspot.Editor
     {
         private RenderedObjectTracker _objectTracker;
 
-        public override void StartNewRun()
+        public override bool StartNewRun()
         {
-            base.StartNewRun();
-            if (_objectTracker != null)
-                return;
-            _objectTracker = new RenderedObjectTracker();
-            _objectTracker.Initialize();
-            _objectTracker.VisibleRenderersChanged += OnVisibleObjectsChanged;
+            if (!base.StartNewRun())
+                return false;
+            
+            if (_objectTracker == null)
+            {
+                _objectTracker = new RenderedObjectTracker();
+                _objectTracker.Initialize();
+                _objectTracker.VisibleRenderersChanged += OnVisibleObjectsChanged;
+            }
+            return true;
         }
 
         public override void CleanUp()

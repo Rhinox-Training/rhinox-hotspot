@@ -28,11 +28,13 @@ namespace Hotspot.Editor
         private int _cubesInViewCount = 0;
 
 
-        public override void StartNewRun()
+        public override bool StartNewRun()
         {
-            base.StartNewRun();
+            if (!base.StartNewRun())
+                return false;
 
             CreateOctree();
+            return true;
         }
 
         private void CreateOctree()
