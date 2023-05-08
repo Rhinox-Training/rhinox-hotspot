@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEditor;
 using UnityEngine;
+using static VertexOctreeBuilder;
 
 namespace Rhinox.Hotspot.Editor
 {
@@ -15,7 +16,7 @@ namespace Rhinox.Hotspot.Editor
 
         private int _hotSpotTreshold = 0;
         private Vector2 _scrollPos = Vector2.zero;
-        private Octree _octTree = null;
+        private VertexOctreeBuilder _octTree = null;
         private List<KeyValuePair<int, Vector3>> _hotList = new List<KeyValuePair<int, Vector3>>();
 
         public static void ShowWindow()
@@ -24,7 +25,7 @@ namespace Rhinox.Hotspot.Editor
             win.titleContent = new GUIContent("HotSpots");
         }
 
-        public void UpdateTree(Octree tree)
+        public void UpdateTree(VertexOctreeBuilder tree)
         {
             _octTree = tree;
 
@@ -38,9 +39,9 @@ namespace Rhinox.Hotspot.Editor
             UpdateHotSpotList();
         }
 
-        private void RecursiveHotSpotFinder(Octree tree)
+        private void RecursiveHotSpotFinder(OctreeNode tree)
         {
-            if (tree.children == null)
+            if (tree._children == null)
             {
                 if (tree.VertexCount > _hotSpotTreshold)
                 {
@@ -49,7 +50,7 @@ namespace Rhinox.Hotspot.Editor
                 return;
             }
 
-            foreach (var child in tree.children)
+            foreach (var child in tree._children)
             {
                 RecursiveHotSpotFinder(child);
             }
@@ -59,7 +60,8 @@ namespace Rhinox.Hotspot.Editor
         {
             _hotList.Clear();
 
-            RecursiveHotSpotFinder(_octTree);
+            //_octTree.GetHotSpots();
+            RecursiveHotSpotFinder(_octTree.Tree);
 
             _hotList.Sort((pair1, pair2) => pair2.Key.CompareTo(pair1.Key));
         }
