@@ -63,7 +63,7 @@ namespace Hotspot.Editor
             return (_shaders != null ? _shaders.Length : 0);
         }
 
-        protected override string GetStatName()
+        protected override string GetStatNameInner()
         {
             switch (Filter)
             {
