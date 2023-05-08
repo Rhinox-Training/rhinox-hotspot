@@ -9,13 +9,15 @@ namespace Hotspot.Editor
     {
         private List<T> _samples = new List<T>();
         
-        public override void StartNewRun()
+        public override bool StartNewRun()
         {
-            base.StartNewRun();
+            if (!base.StartNewRun())
+                return false;
             if (_samples == null)
                 _samples = new List<T>();
             else
                 _samples.Clear();
+            return true;
         }
 
         protected abstract string GetStatName();
@@ -31,7 +33,7 @@ namespace Hotspot.Editor
         {
             base.DrawLayout();
             
-            GUILayout.Label($"{GetStatName()}: {SampleStatistic()}");
+            GUILayout.Label($"{GetStatName()}: {SampleStatistic():0.00}");
         }
 
         protected abstract float Selector(T value);

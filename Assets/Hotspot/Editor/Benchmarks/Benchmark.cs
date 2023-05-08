@@ -91,13 +91,22 @@ namespace Hotspot.Editor
             _currentStage = _configuration.Entries[index];
             
             // Initialize statistics
+            var stats = new List<BaseBenchmarkStatistic>();
             if (_configuration.Statistics != null)
             {
                 foreach (var stat in _configuration.Statistics)
                 {
                     if (stat == null)
                         continue;
-                    stat.StartNewRun();
+                    if (!stat.StartNewRun())
+                    {
+                        PLog.Warn<HotspotLogger>($"Failed to start stat '{stat}'...");
+                        continue;
+                    }
+                    else
+                    {
+                        stats.Add(stat);
+                    }
                 }
             }
 
@@ -112,12 +121,12 @@ namespace Hotspot.Editor
                 }
 
                 _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
-                HandleTick();
+                HandleTick(stats);
                 yield return null;
                 while (!_currentStage.Completed)
                 {
                     _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
-                    HandleTick();
+                    HandleTick(stats);
                     yield return null;
                 }
 
@@ -133,30 +142,27 @@ namespace Hotspot.Editor
                     _currentStage = null;
             }
 
-            HandleTick();
+            HandleTick(stats);
             _benchmarkProgress = 1.0f;
             _benchmarkRunning = false;
 
             
-            // Initialize statistics
-            if (_configuration.Statistics != null)
+            // Cleanup statistics
+            foreach (var stat in stats)
             {
-                foreach (var stat in _configuration.Statistics)
-                {
-                    if (stat == null)
-                        continue;
-                    stat.CleanUp();
-                }
+                if (stat == null)
+                    continue;
+                stat.CleanUp();
             }
 
-            HandleFinish();
+            HandleFinish(stats);
         }
 
-        private void HandleTick()
+        private void HandleTick(ICollection<BaseBenchmarkStatistic> stats)
         {
-            if (_configuration.Statistics != null)
+            if (stats != null)
             {
-                foreach (var stat in _configuration.Statistics)
+                foreach (var stat in stats)
                 {
                     if (stat == null)
                         continue;
@@ -168,14 +174,14 @@ namespace Hotspot.Editor
             BenchmarkTick?.Invoke();
         }
 
-        private void HandleFinish()
+        private void HandleFinish(ICollection<BaseBenchmarkStatistic> stats)
         {
             if (_results == null)
                 _results = new List<BenchmarkResultEntry>();
             
-            if (_configuration.Statistics != null)
+            if (stats != null)
             {
-                foreach (var stat in _configuration.Statistics)
+                foreach (var stat in stats)
                 {
                     if (stat == null)
                         continue;

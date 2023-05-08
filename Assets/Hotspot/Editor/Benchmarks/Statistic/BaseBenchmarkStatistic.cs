@@ -11,9 +11,9 @@ namespace Hotspot.Editor
     {
         private string _titleString => GetType().GetNiceName(false);
         
-        public virtual void StartNewRun()
+        public virtual bool StartNewRun()
         {
-            
+            return true;
         }
         
         public virtual void CleanUp()
