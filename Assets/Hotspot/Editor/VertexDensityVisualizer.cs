@@ -90,11 +90,15 @@ namespace Rhinox.Hotspot.Editor
             GUILayout.Label("Max vertices per cube:");
             GUILayout.Space(5f);
             int.TryParse(GUILayout.TextField($"{_MaxVerticesPerCube}", GUILayout.Width(75f)), out _MaxVerticesPerCube);
+            if (_MaxVerticesPerCube <= 0)
+                _MaxVerticesPerCube = 1;
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Min cube size:");
             float.TryParse(GUILayout.TextField($"{_minOctreeCubeSize}", GUILayout.Width(75f)), out _minOctreeCubeSize);
+            if (_minOctreeCubeSize <= 0)
+                _minOctreeCubeSize = 0.001f;
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
