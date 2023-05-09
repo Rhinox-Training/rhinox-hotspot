@@ -22,10 +22,11 @@ namespace Hotspot.Editor
         public VertexDensityMode _mode = VertexDensityMode.Simple;
         public int _MaxVerticesPerCube = 500;
         public float _minOctreeCubeSize = 1f;
-        //[ShowIf()]
+
+        [ShowIf(nameof(_dummyAdvancedModeBool))]
         public float _vertsPerPixelThreshold = 4f;
 
-        //private bool DUMMY = _mode == VertexDensityMode.Simple;
+        private bool _dummyAdvancedModeBool = true;
 
         private int _cubesInViewCount = 0;
         private float _hotVertsPerPixelCount = 0;
