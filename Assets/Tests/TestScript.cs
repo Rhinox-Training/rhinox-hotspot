@@ -19,6 +19,6 @@ public class TestScript : MonoBehaviour
 
     private void OnGUI()
     {
-        GUI.Button(VertexDensityVisualizer.recto, "FooBar");
+        //GUI.Button(VertexDensityVisualizer.recto, "FooBar");
     }
 }

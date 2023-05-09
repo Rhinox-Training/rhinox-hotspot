@@ -24,52 +24,19 @@ MonoBehaviour:
     rid: 2224544141372817411
   Entries:
   - rid: 2224544124573319176
-  - rid: 2224544124573319177
   Statistics:
-  - rid: 2224544124573319170
-  - rid: 2224544124573319172
-  - rid: 2224544124573319173
-  - rid: 2224544124573319174
-  - rid: 2224544124573319175
   - rid: 2224544141372817415
+  - rid: 2224544213569896449
   references:
     version: 2
     RefIds:
-    - rid: 2224544124573319170
-      type: {class: MaterialsRenderedStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
-      data:
-        Unique: 0
-    - rid: 2224544124573319172
-      type: {class: MaterialsRenderedStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
-      data:
-        Unique: 1
-    - rid: 2224544124573319173
-      type: {class: ShadersRenderedStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
-      data:
-        Filter: 0
-    - rid: 2224544124573319174
-      type: {class: ShadersRenderedStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
-      data:
-        Filter: 1
-    - rid: 2224544124573319175
-      type: {class: ShadersRenderedStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
-      data:
-        Filter: 2
     - rid: 2224544124573319176
       type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
         Name: Start
         Duration: 5
         CameraPose:
-          position: {x: 0, y: 5, z: -10}
-          rotation: {x: 0, y: 0, z: 0, w: 1}
-    - rid: 2224544124573319177
-      type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
-      data:
-        Name: End
-        Duration: 5
-        CameraPose:
-          position: {x: 0, y: 5, z: 30}
+          position: {x: 0, y: 2.5, z: -10}
           rotation: {x: 0, y: 0, z: 0, w: 1}
     - rid: 2224544141372817411
       type: {class: MainCameraPoseApplier, ns: Hotspot, asm: com.rhinox.open.hotspot}
@@ -77,5 +44,11 @@ MonoBehaviour:
       type: {class: VertexDensityStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
         _mode: 0
-        _MaxVerticesPerCube: 1
-        _minOctreeCubeSize: 1
+        _MaxVerticesPerCube: 25
+        _minOctreeCubeSize: 0.25
+    - rid: 2224544213569896449
+      type: {class: VertexDensityStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        _mode: 1
+        _MaxVerticesPerCube: 25
+        _minOctreeCubeSize: 0.25

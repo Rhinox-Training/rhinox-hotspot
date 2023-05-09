@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 using Rhinox.Lightspeed;
+using Sirenix.OdinInspector;
 
 namespace Hotspot.Editor
 {
@@ -21,9 +22,13 @@ namespace Hotspot.Editor
         public VertexDensityMode _mode = VertexDensityMode.Simple;
         public int _MaxVerticesPerCube = 500;
         public float _minOctreeCubeSize = 1f;
+        //[ShowIf()]
+        public float _vertsPerPixelThreshold = 4f;
+
+        //private bool DUMMY = _mode == VertexDensityMode.Simple;
 
         private int _cubesInViewCount = 0;
-        private float _verticesPerPixel = 0;
+        private float _hotVertsPerPixelCount = 0;
 
         private static VertexOctreeBuilder _octreeBuilder;
 
@@ -34,7 +39,7 @@ namespace Hotspot.Editor
 
             if (_octreeBuilder == null)
             {
-                _octreeBuilder = new VertexOctreeBuilder(_MaxVerticesPerCube, _minOctreeCubeSize);
+                _octreeBuilder = new VertexOctreeBuilder(_MaxVerticesPerCube, _minOctreeCubeSize, _vertsPerPixelThreshold);
                 _octreeBuilder.CreateOctree();
             }
 
@@ -60,7 +65,7 @@ namespace Hotspot.Editor
                 case VertexDensityMode.Simple:
                     return "Amount of Hotspots in view";
                 case VertexDensityMode.Advanced:
-                    return "Vertices per Pixel";
+                    return "amount of Hotspots (vert/pixel) in view";
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -74,7 +79,7 @@ namespace Hotspot.Editor
                     _cubesInViewCount = _octreeBuilder.GetUniqueHotSpotCubes(visibleRenderers);
                     break;
                 case VertexDensityMode.Advanced:
-                    _verticesPerPixel = _octreeBuilder.GetVerticesPerPixel(visibleRenderers);
+                    _hotVertsPerPixelCount = _octreeBuilder.GetVerticesPerPixel(visibleRenderers);
                     break;
             }
         }
@@ -86,7 +91,7 @@ namespace Hotspot.Editor
                 case VertexDensityMode.Simple:
                     return _cubesInViewCount;
                 case VertexDensityMode.Advanced:
-                    return _verticesPerPixel;
+                    return _hotVertsPerPixelCount;
                 default:
                     throw new ArgumentOutOfRangeException();
             }

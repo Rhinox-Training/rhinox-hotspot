@@ -25,7 +25,6 @@ namespace Rhinox.Hotspot.Editor
         private static PersistentValue<int> _MaxVerticesPerCube;//= 500;
         private static PersistentValue<float> _minOctreeCubeSize;// = 1f;
 
-        public static Rect recto;
         private VertexOctreeBuilder _tree = null;
         private DenseVertexSpotWindow _denseVertexSpotInfoWindow = null;
 
@@ -76,7 +75,7 @@ namespace Rhinox.Hotspot.Editor
 
             if (GUILayout.Button("Calculate and visualize"))
             {
-                _tree = new VertexOctreeBuilder(_MaxVerticesPerCube, _minOctreeCubeSize);
+                _tree = new VertexOctreeBuilder(_MaxVerticesPerCube, _minOctreeCubeSize, 4f);
                 _tree.CreateOctree();
             }
 
@@ -113,8 +112,6 @@ namespace Rhinox.Hotspot.Editor
                     {
                         Handles.Label(tree._bounds.center, $"{tree.VertexCount}");
                         Handles.DrawWireCube(tree._bounds.center, tree._bounds.size);
-                        //DebugExt.DebugBounds(tree._bounds, 120f);
-                        recto = BoundsExtensions.ToScreenSpace(tree._bounds, Camera.main);
                     }
                 }
 
