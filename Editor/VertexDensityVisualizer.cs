@@ -75,8 +75,23 @@ namespace Rhinox.Hotspot.Editor
 
             if (GUILayout.Button("Calculate and visualize"))
             {
-                _tree = new VertexOctreeBuilder(_MaxVerticesPerCube, _minOctreeCubeSize, 4f);
-                _tree.CreateOctree();
+                if (_tree == null)
+                    _tree = new VertexOctreeBuilder(_MaxVerticesPerCube, _minOctreeCubeSize, 4f);
+                else
+                {
+                    _tree._MaxVerticesPerCube = _MaxVerticesPerCube;
+                    _tree._minOctreeCubeSize = _minOctreeCubeSize;
+                }
+
+                _tree.CreateOctree(false);
+
+                //check if the window exists
+                if (_denseVertexSpotInfoWindow == null)
+                    _denseVertexSpotInfoWindow = EditorWindow.GetWindow<DenseVertexSpotWindow>();
+
+                //if the window did exist update the values
+                if (_denseVertexSpotInfoWindow != null)
+                    _denseVertexSpotInfoWindow.UpdateTree(_tree);
             }
 
             GUILayout.Space(5f);

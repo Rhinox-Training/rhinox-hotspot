@@ -23,8 +23,10 @@ public class VertexOctreeBuilder
         _vertsPerPixelThreshold = vertsPerPixelThreshold;
     }
 
-    public bool CreateOctree()
+    public bool CreateOctree(bool usePlayModeCache = false)
     {
+        _tree?.Cleanup();
+
         var renderers = UnityEngine.Object.FindObjectsOfType<MeshRenderer>();
         var filters = UnityEngine.Object.FindObjectsOfType<MeshFilter>();
 
@@ -52,9 +54,15 @@ public class VertexOctreeBuilder
             if (LODRendererCache.IsLOD(renderer))
                 continue;
 
-            foreach (var point in EditorPlayModeMeshCache.GetVertexData(meshFilter))
+            if (usePlayModeCache)
             {
-                _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point), renderer);
+                foreach (var point in EditorPlayModeMeshCache.GetVertexData(meshFilter))
+                    _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point), renderer);
+            }
+            else
+            {
+                foreach (var point in meshFilter.sharedMesh.vertices)
+                    _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point), renderer);
             }
         }
 
@@ -123,6 +131,7 @@ public class VertexOctreeBuilder
 
             _renderers?.Clear();
             _vertices?.Clear();
+            _children = null;
         }
 
         public void Insert(Vector3 point, Renderer renderer = null)
