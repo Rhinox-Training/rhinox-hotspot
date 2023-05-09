@@ -7,16 +7,16 @@ namespace Hotspot.Editor
 {
     public abstract class BaseMeasurableBenchmarkStatistic<T> : BaseBenchmarkStatistic
     {
-        private List<T> _samples = new List<T>();
+        private Dictionary<IBenchmarkStage, List<T>> _samplesByStage;
         
         public override bool StartNewRun()
         {
             if (!base.StartNewRun())
                 return false;
-            if (_samples == null)
-                _samples = new List<T>();
+            if (_samplesByStage == null)
+                _samplesByStage = new Dictionary<IBenchmarkStage, List<T>>();
             else
-                _samples.Clear();
+                _samplesByStage.Clear();
             return true;
         }
 
@@ -26,7 +26,7 @@ namespace Hotspot.Editor
 
         public override void Sample()
         {
-            _samples.Add(SampleStatistic());
+            _samplesByStage[_currentStage].Add(SampleStatistic());
         }
         
         public override void DrawLayout()
@@ -43,9 +43,18 @@ namespace Hotspot.Editor
             return new BenchmarkResultEntry()
             {
                 Name = GetStatName(),
-                Average = _samples.Average(Selector),
-                StdDev = _samples.StdDev(Selector)
+                Average = _samplesByStage.SelectMany(x => x.Value).Average(Selector),
+                StdDev = _samplesByStage.SelectMany(x => x.Value).StdDev(Selector)
             };
+        }
+
+        protected override void OnUpdateStage()
+        {
+            base.OnUpdateStage();
+            if (_currentStage == null)
+                return;
+            if (!_samplesByStage.ContainsKey(_currentStage))
+                _samplesByStage.Add(_currentStage, new List<T>());
         }
     }
 

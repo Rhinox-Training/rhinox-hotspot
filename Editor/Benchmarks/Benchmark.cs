@@ -118,7 +118,8 @@ namespace Hotspot.Editor
             }
 
             float incrementSize = 1.0f / (float)count;
-            while (_currentStage != null)
+            bool finished = false;
+            while (!finished)
             {
                 float stageProgress = 0.0f;
                 if (!_currentStage.RunStage(_configuration.PoseApplier, (progress) => { stageProgress = progress; }))
@@ -128,12 +129,12 @@ namespace Hotspot.Editor
                 }
 
                 _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
-                HandleTick(stats);
+                HandleTick(_currentStage, stats);
                 yield return null;
                 while (!_currentStage.Completed)
                 {
                     _benchmarkProgress = ((float)index + stageProgress) * incrementSize;
-                    HandleTick(stats);
+                    HandleTick(_currentStage, stats);
                     yield return null;
                 }
 
@@ -146,10 +147,12 @@ namespace Hotspot.Editor
                 if (index < count - 1)
                     _currentStage = _configuration.Entries[++index];
                 else
-                    _currentStage = null;
+                {
+                    finished = true;
+                }
             }
 
-            HandleTick(stats);
+            HandleTick(_currentStage, stats);
             _benchmarkProgress = 1.0f;
             _benchmarkRunning = false;
 
@@ -165,7 +168,7 @@ namespace Hotspot.Editor
             HandleFinish(stats);
         }
 
-        private void HandleTick(ICollection<BaseBenchmarkStatistic> stats)
+        private void HandleTick(IBenchmarkStage benchmarkStage, ICollection<BaseBenchmarkStatistic> stats)
         {
             if (stats != null)
             {
@@ -173,6 +176,7 @@ namespace Hotspot.Editor
                 {
                     if (stat == null)
                         continue;
+                    stat.UpdateStage(benchmarkStage);
                     stat.Sample();
                 }
             }
