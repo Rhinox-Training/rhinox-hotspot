@@ -1,10 +1,7 @@
 using Rhinox.GUIUtils.Editor;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using UnityEditor;
 using UnityEngine;
-using static VertexOctreeBuilder;
 
 namespace Rhinox.Hotspot.Editor
 {
@@ -39,7 +36,7 @@ namespace Rhinox.Hotspot.Editor
             UpdateHotSpotList();
         }
 
-        private void RecursiveHotSpotFinder(OctreeNode tree)
+        private void RecursiveHotSpotFinder(VertexOctreeBuilder.OctreeNode tree)
         {
             if (tree._children == null)
             {
