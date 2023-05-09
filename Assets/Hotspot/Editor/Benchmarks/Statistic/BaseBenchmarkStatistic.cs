@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Rhinox.Lightspeed.Reflection;
 using Rhinox.Utilities;
 using Sirenix.OdinInspector;
@@ -33,6 +34,12 @@ namespace Hotspot.Editor
         {
             return null;
         }
+
+        public virtual Dictionary<IBenchmarkStage, BenchmarkResultEntry> GetResultsPerStage()
+        {
+            return null;
+        }
+
 
         public void UpdateStage(IBenchmarkStage benchmarkStage)
         {

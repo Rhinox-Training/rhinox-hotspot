@@ -14,9 +14,11 @@ namespace Hotspot.Editor
         public bool IsRunning => _benchmarkRunning;
         public bool IsPaused => IsRunning && (_benchmarkCoroutine != null && _benchmarkCoroutine.Paused);
 
+        private Dictionary<IBenchmarkStage, List<BenchmarkResultEntry>> _resultsByStage;
+        public Dictionary<IBenchmarkStage, List<BenchmarkResultEntry>> ResultsByStage => _resultsByStage;
         private List<BenchmarkResultEntry> _results;
         public IReadOnlyCollection<BenchmarkResultEntry> Results => _results;
-        
+
 
         private bool _benchmarkRunning;
         private float _benchmarkProgress;
@@ -25,14 +27,14 @@ namespace Hotspot.Editor
         private ManagedCoroutine _benchmarkCoroutine;
 
 
-        public delegate void FinishedBenchmarkHandler(Benchmark benchmark, IReadOnlyCollection<BenchmarkResultEntry> results);
+        public delegate void FinishedBenchmarkHandler(Benchmark benchmark, IReadOnlyCollection<BenchmarkResultEntry> results, IReadOnlyDictionary<IBenchmarkStage, List<BenchmarkResultEntry>> resultsByStage);
         public event FinishedBenchmarkHandler Finished;
         public event Action BenchmarkTick;
 
         public Benchmark(BenchmarkConfiguration config)
         {
             _configuration = config;
-            _results = new List<BenchmarkResultEntry>();
+            _resultsByStage = new Dictionary<IBenchmarkStage, List<BenchmarkResultEntry>>();
         }
         
 
@@ -187,6 +189,8 @@ namespace Hotspot.Editor
 
         private void HandleFinish(ICollection<BaseBenchmarkStatistic> stats)
         {
+            if (_resultsByStage == null)
+                _resultsByStage = new Dictionary<IBenchmarkStage, List<BenchmarkResultEntry>>();
             if (_results == null)
                 _results = new List<BenchmarkResultEntry>();
             
@@ -196,14 +200,27 @@ namespace Hotspot.Editor
                 {
                     if (stat == null)
                         continue;
-                    var result = stat.GetResult();
-                    if (result == null)
-                        continue;
-                    _results.Add(result);
+                    var result = stat.GetResultsPerStage();
+                    if (result != null)
+                    {
+                        foreach (var stage in result.Keys)
+                        {
+                            if (!_resultsByStage.ContainsKey(stage))
+                                _resultsByStage.Add(stage, new List<BenchmarkResultEntry>());
+
+                            _resultsByStage[stage].Add(result[stage]);
+                        }
+                    }
+
+                    var summarizedResult = stat.GetResult();
+                    if (summarizedResult != null)
+                    {
+                        _results.Add(summarizedResult);
+                    }
                 }
             }
 
-            Finished?.Invoke(this, _results);
+            Finished?.Invoke(this, _results, _resultsByStage);
         }
         
         public void DrawLayout()
