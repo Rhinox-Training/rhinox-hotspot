@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.Lightspeed;
+using Rhinox.Magnus;
 using Rhinox.Perceptor;
 using UnityEditor;
 using UnityEngine;
@@ -23,13 +24,9 @@ namespace Hotspot.Editor
         private IEnumerable<KeyValuePair<Shader, int>> _shaderOccurrence = null;
         private IEnumerable<KeyValuePair<Material, int>> _materialOccurence = null;
 
-        private Dictionary<Material, GameObject[]> _materialUses = new Dictionary<Material,
-            GameObject[]>();
+        private Dictionary<Material, KeyValuePair<Mesh, GameObject>[]> _materialUses = new();
 
-        private Dictionary<Shader, KeyValuePair<Material, int>[]> _shaderUses = new Dictionary<Shader,
-            KeyValuePair<Material, int>[]>();
-
-        private GUILayoutOption[][] _columnOptions;
+        private Dictionary<Shader, KeyValuePair<Material, int>[]> _shaderUses = new();
 
         [MenuItem(HotspotWindowHelper.ANALYSIS_PREFIX + "Rendered Material Analysis", false, 1500)]
         public static void ShowWindow()
@@ -42,14 +39,6 @@ namespace Hotspot.Editor
         {
             base.Initialize();
             RefreshMeshRendererCache();
-
-            _columnOptions = new[]
-            {
-                new[]
-                    { GUILayout.Height(EditorGUIUtility.singleLineHeight) },
-                new[]
-                    { GUILayout.Height(EditorGUIUtility.singleLineHeight) }
-            };
         }
 
         private void RefreshMeshRendererCache()
@@ -96,10 +85,11 @@ namespace Hotspot.Editor
         {
             if (typeof(T) != typeof(Material) && typeof(T) != typeof(Shader))
             {
-                PLog.Warn<HotspotLogger>($"[MaterialRenderingAnalysis,RenderInfo], function is not implemented for type {typeof(T)}");
+                PLog.Warn<HotspotLogger>(
+                    $"[MaterialRenderingAnalysis,RenderInfo], function is not implemented for type {typeof(T)}");
                 return;
             }
-            
+
             GUILayout.Space(5f);
             CustomEditorGUI.Title(paragraphTitle, EditorStyles.boldLabel);
             GUILayout.Space(10f);
@@ -124,7 +114,7 @@ namespace Hotspot.Editor
 
                 Material mat = item.Key as Material;
                 Shader shader = item.Key as Shader;
-                
+
                 // Display name and its occurrence
                 if (mat != null)
                     EditorGUILayout.LabelField($"{mat.name}: {item.Value}");
@@ -147,10 +137,12 @@ namespace Hotspot.Editor
                     GUILayout.Space(10);
                     if (mat != null)
                     {
+                        DisplayMaterialInfo(mat);
                         DisplayMaterialUses(_materialUses[mat]);
                     }
                     else if (shader != null)
                     {
+                        DisplayShaderInfo(shader);
                         DisplayShaderUses(_shaderUses[shader]);
                     }
 
@@ -159,18 +151,61 @@ namespace Hotspot.Editor
             }
         }
 
-        private void DisplayMaterialUses(IEnumerable<GameObject> gameObjects)
+        private void DisplayShaderInfo(Shader shader)
         {
-            using (var table = new eUtility.SimpleTableView(new[] { "GameObject name", "GameObject path" },
-                       _columnOptions))
+            GUILayout.Label("Shader Info", EditorStyles.boldLabel);
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel("Amount of passes: ");
+            EditorGUILayout.LabelField(shader.passCount.ToString());
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel("Amount of keywords: ");
+            EditorGUILayout.LabelField(shader.keywordSpace.keywordCount.ToString());
+            GUILayout.EndHorizontal();
+        }
+
+        private void DisplayMaterialInfo(Material mat)
+        {
+            GUILayout.Label("Material Info", EditorStyles.boldLabel);
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.PrefixLabel("Shader: ");
+            EditorGUILayout.LabelField(mat.shader.name);
+            GUILayout.EndHorizontal();
+
+            foreach (string keywordName in mat.shaderKeywords)
             {
-                foreach (var gameObject in gameObjects)
-                    table.DrawRow(gameObject.name, gameObject.GetFullName());
+                GUILayout.Label(keywordName, EditorStyles.miniLabel);
+            }
+            
+        }
+
+        private void DisplayMaterialUses(IEnumerable<KeyValuePair<Mesh, GameObject>> meshGameObjectPairs)
+        {
+            GUILayout.Space(5f);
+
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Applied Mesh", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("GameObject Full name", EditorStyles.boldLabel);
+            GUILayout.EndHorizontal();
+
+            foreach (var materialUsePair in meshGameObjectPairs)
+            {
+                GUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"{materialUsePair.Key.name}");
+                EditorGUILayout.LabelField($"{materialUsePair.Value.GetFullName()}");
+                if (GUILayout.Button("Ping"))
+                {
+                    EditorGUIUtility.PingObject(materialUsePair.Value);
+                }
+
+                GUILayout.EndHorizontal();
             }
         }
 
         private void DisplayShaderUses(IEnumerable<KeyValuePair<Material, int>> materialUsePairs)
         {
+            GUILayout.Space(5f);
             GUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Material name", EditorStyles.boldLabel);
             EditorGUILayout.LabelField("Amount of uses", EditorStyles.boldLabel);
@@ -184,7 +219,7 @@ namespace Hotspot.Editor
                 GUILayout.EndHorizontal();
             }
         }
-        
+
         private void GetShaderUses(Shader shaderKey)
         {
             var materials = _snapShotRenderers.SelectMany(x => x.sharedMaterials).ToArray();
@@ -201,14 +236,39 @@ namespace Hotspot.Editor
             var gameObjectsWithTargetMaterial =
                 _snapShotRenderers.Where(r => r.sharedMaterials.Any(m => m == material)).Select(r => r.gameObject)
                     .ToArray();
-            _materialUses.Add(material, gameObjectsWithTargetMaterial);
+            
+            _materialUses.Add(material,
+                (from gameObject in gameObjectsWithTargetMaterial
+                    let mesh = gameObject.GetComponent<MeshFilter>().sharedMesh
+                    select new KeyValuePair<Mesh, GameObject>(mesh, gameObject)).ToArray());
         }
-        
+
         private void TakeMaterialSnapshot()
         {
-            // TODO: Get the main camera through Magnus camera service
-            Camera mainCamera = Camera.main;
+            Camera mainCamera;
+            if (Application.isPlaying)
+            {
+                if (CameraInfo.Instance == null)
+                {
+                    PLog.Error<HotspotLogger>(
+                        "[MaterialRenderingAnalysis,TakeMaterialSnapshot] CameraInfo.Instance is null");
+                    return;
+                }
 
+                mainCamera = CameraInfo.Instance.Main;
+
+                if (mainCamera == null)
+                {
+                    PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
+                    return;
+                }
+            }
+            else
+            {
+                mainCamera = SceneView.GetAllSceneCameras()[0];
+            }
+            
+            
             // Get the renderers that are visible and in the frustum of the main camera
             _snapShotRenderers = _renderers.Where(x => x.isVisible).ToArray();
             _snapShotRenderers = _snapShotRenderers.Where(r => r.IsWithinFrustum(mainCamera)).ToArray();
