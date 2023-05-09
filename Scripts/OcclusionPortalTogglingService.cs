@@ -16,7 +16,6 @@ namespace Hotspot
         {
             base.OnSceneLoaded(scene, mode);
             _portals = GameObject.FindObjectsOfType<OcclusionPortalBakeData>();
-            
         }
 
         protected override void Update()

@@ -13,7 +13,7 @@ namespace Hotspot.Editor
     {
         public static bool Export(Benchmark benchmark, string filePath, bool append = true)
         {
-            if (string.IsNullOrWhiteSpace(filePath) || benchmark == null || benchmark.Results.IsNullOrEmpty())
+            if (string.IsNullOrWhiteSpace(filePath) || benchmark == null || benchmark.ResultsByStage.IsNullOrEmpty())
                 return false;
             filePath = ParseFilePath(filePath);
 
@@ -21,40 +21,68 @@ namespace Hotspot.Editor
             if (FileHelper.Exists(filePath) && append)
             {
                 table = ReadTable(filePath);
-                var sortedResults = new List<BenchmarkResultEntry>();
-                for (int i = 0; i < benchmark.Results.Count; ++i)
-                    sortedResults.Add(EmptyEntry());
+                if (table.Columns.Count > 0 && table.Columns[0].ColumnName != "Stage")
+                    table.Columns.Add("Stage");
 
-                var results = benchmark.Results.ToArray();
-                for (var i = 0; i < results.Length; i++)
+                var results = benchmark.ResultsByStage;
+                foreach (var stage in results.Keys)
                 {
-                    var result = results[i];
-                    int index = table.Columns.IndexOf(string.Join("/", result.Name, "AVERAGE"));
-                    if (index == -1)
+                    var sortedResults = new List<BenchmarkResultEntry>();
+                    for (int i = 0; i < results[stage].Count; ++i)
+                        sortedResults.Add(EmptyEntry());
+                    for (var i = 0; i < results[stage].Count; i++)
                     {
-                        table.Columns.Add(string.Join("/", result.Name, "AVERAGE"));
-                        table.Columns.Add(string.Join("/", result.Name, "STD.DEV"));
+                        var result = results[stage][i];
+                        int index = table.Columns.IndexOf(string.Join("/", result.Name, "AVERAGE"));
+                        if (index == -1)
+                        {
+                            table.Columns.Add(string.Join("/", result.Name, "AVERAGE"));
+                            table.Columns.Add(string.Join("/", result.Name, "STD.DEV"));
 
-                        sortedResults.Add(result);
+                            sortedResults.Add(result);
+                        }
+                        else
+                        {
+                            sortedResults[((index - 1) / 2)] = result;
+                        }
                     }
-                    else
+
+                    var row = new List<object>();
+                    row.Add(stage.ToString());
+                    foreach (var result in sortedResults)
                     {
-                        sortedResults[index / 2] = result;
+                        row.Add(result.Average.ToString());
+                        row.Add(result.StdDev.ToString());
                     }
+                    table.Rows.Add(row.ToArray()); // Needs to be an object array
                 }
-
-                table.Rows.Add(sortedResults.SelectMany(x => new[] { x.Average.ToString(), x.StdDev.ToString() }).ToArray());
                 
             }
             else
             {
                 table = new DataTable();
-                foreach (var result in benchmark.Results)
+                table.Columns.Add("Stage");
+
+                if (benchmark.ResultsByStage.Values.Count > 0)
                 {
-                    table.Columns.Add(string.Join("/", result.Name, "AVERAGE"));
-                    table.Columns.Add(string.Join("/", result.Name, "STD.DEV"));
+                    foreach (var result in benchmark.ResultsByStage.Values.First())
+                    {
+                        table.Columns.Add(string.Join("/", result.Name, "AVERAGE"));
+                        table.Columns.Add(string.Join("/", result.Name, "STD.DEV"));
+                    }
                 }
-                table.Rows.Add(benchmark.Results.SelectMany(x => new[] { x.Average.ToString(), x.StdDev.ToString() }).ToArray());
+
+                foreach (var stage in benchmark.ResultsByStage.Keys)
+                {
+                    var row = new List<object>();
+                    row.Add(stage.ToString());
+                    foreach (var result in benchmark.ResultsByStage[stage])
+                    {
+                        row.Add(result.Average.ToString());
+                        row.Add(result.StdDev.ToString());
+                    }
+                    table.Rows.Add(row.ToArray()); // Needs to be an object array
+                }
             }
             
             string csvFileStr = table.ToCsv();
@@ -67,7 +95,7 @@ namespace Hotspot.Editor
         private static DataTable ReadTable(string filePath)
         {
             string[] lines = FileHelper.ReadAllLines(filePath);
-            return DataTableExtensions.ReadCsvTable(lines);
+            return Utility.ReadCsvTable(lines);
         }
 
         private static string ParseFilePath(string filePath)

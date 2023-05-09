@@ -47,6 +47,21 @@ namespace Hotspot.Editor
                 StdDev = _samplesByStage.SelectMany(x => x.Value).StdDev(Selector)
             };
         }
+        
+        public override Dictionary<IBenchmarkStage, BenchmarkResultEntry> GetResultsPerStage()
+        {
+            var dict = new Dictionary<IBenchmarkStage, BenchmarkResultEntry>();
+            foreach (var stage in _samplesByStage.Keys)
+            {
+                dict.Add(stage, new BenchmarkResultEntry()
+                {
+                    Name = GetStatName(),
+                    Average = _samplesByStage[stage].Average(Selector),
+                    StdDev = _samplesByStage[stage].StdDev(Selector)
+                });
+            }
+            return dict;
+        }
 
         protected override void OnUpdateStage()
         {
