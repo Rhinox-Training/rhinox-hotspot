@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.Lightspeed;
+using Rhinox.Perceptor;
 using UnityEditor;
 using UnityEngine;
 
@@ -41,18 +43,18 @@ namespace Hotspot.Editor
             base.Initialize();
             RefreshMeshRendererCache();
 
-            _columnOptions = new GUILayoutOption[][]
+            _columnOptions = new[]
             {
-                new GUILayoutOption[]
+                new[]
                     { GUILayout.Height(EditorGUIUtility.singleLineHeight) },
-                new GUILayoutOption[]
+                new[]
                     { GUILayout.Height(EditorGUIUtility.singleLineHeight) }
             };
         }
 
         private void RefreshMeshRendererCache()
         {
-            _renderers = GameObject.FindObjectsOfType<Renderer>();
+            _renderers = FindObjectsOfType<Renderer>();
         }
 
         protected override void OnGUI()
@@ -81,104 +83,75 @@ namespace Hotspot.Editor
 
         private void RenderMaterialInfo()
         {
-            GUILayout.Space(10f);
-            CustomEditorGUI.Title("Occurrence of Materials:", EditorStyles.boldLabel);
-            GUILayout.Space(10f);
-
-            foreach (var material in _materialOccurence)
-            {
-                EditorGUILayout.BeginHorizontal();
-                bool isOpen = _materialUses.ContainsKey(material.Key);
-
-                string iconName = isOpen ? "Fa_AngleUp" : "Fa_AngleDown";
-                if (CustomEditorGUI.IconButton(UnityIcon.AssetIcon(iconName)))
-                {
-                    // If the icon is open                        
-                    if (isOpen)
-                        _materialUses.Remove(material.Key);
-                    else
-                        GetMaterialUses(material.Key);
-
-                    // Toggle open status
-                    isOpen = !isOpen;
-                }
-
-                // Display shader name and its occurrence
-                EditorGUILayout.LabelField($"{material.Key.name}: {material.Value}");
-
-                using (new eUtility.DisabledGroup())
-                {
-                    EditorGUILayout.ObjectField(material.Key, typeof(UnityEngine.Object), false);
-                }
-
-                EditorGUILayout.EndHorizontal();
-
-                if (isOpen)
-                {
-                    // Display shades usages
-                    GUILayout.Space(10);
-                    using (var table = new eUtility.SimpleTableView(new[] { "GameObject name", "GameObject path" },
-                               _columnOptions))
-                    {
-                        var uses = _materialUses[material.Key];
-                        foreach (var gameObject in uses)
-                            table.DrawRow(gameObject.name, gameObject.GetFullName());
-                    }
-                }
-            }
+            RenderInfo(_materialOccurence, _materialUses, GetMaterialUses, "Occurrence of Materials:");
         }
-
 
         private void RenderShaderInfo()
         {
+            RenderInfo(_shaderOccurrence, _shaderUses, GetShaderUses, "Occurrence of Shaders:");
+        }
+
+        private void RenderInfo<T, TU>(IEnumerable<KeyValuePair<T, int>> occurrence, IDictionary<T, TU> uses,
+            Action<T> getUses, string paragraphTitle)
+        {
+            if (typeof(T) != typeof(Material) && typeof(T) != typeof(Shader))
+            {
+                PLog.Warn<HotspotLogger>($"[MaterialRenderingAnalysis,RenderInfo], function is not implemented for type {typeof(T)}");
+                return;
+            }
+            
             GUILayout.Space(5f);
-            CustomEditorGUI.Title("Occurrence of Shaders:", EditorStyles.boldLabel);
+            CustomEditorGUI.Title(paragraphTitle, EditorStyles.boldLabel);
             GUILayout.Space(10f);
 
-            foreach (var shader in _shaderOccurrence)
+            foreach (var item in occurrence)
             {
                 EditorGUILayout.BeginHorizontal();
-                bool isOpen = _shaderUses.ContainsKey(shader.Key);
+                bool isOpen = uses.ContainsKey(item.Key);
 
                 string iconName = isOpen ? "Fa_AngleUp" : "Fa_AngleDown";
                 if (CustomEditorGUI.IconButton(UnityIcon.AssetIcon(iconName)))
                 {
                     // If the icon is open                        
                     if (isOpen)
-                        _shaderUses.Remove(shader.Key);
+                        uses.Remove(item.Key);
                     else
-                        GetShaderUses(shader.Key);
+                        getUses(item.Key);
 
                     // Toggle open status
                     isOpen = !isOpen;
                 }
 
-                // Display shader name and its occurrence
-                EditorGUILayout.LabelField($"{shader.Key.name}: {shader.Value}");
+                Material mat = item.Key as Material;
+                Shader shader = item.Key as Shader;
+                
+                // Display name and its occurrence
+                if (mat != null)
+                    EditorGUILayout.LabelField($"{mat.name}: {item.Value}");
+                else if (shader != null)
+                    EditorGUILayout.LabelField($"{shader.name}: {item.Value}");
 
                 using (new eUtility.DisabledGroup())
                 {
-                    EditorGUILayout.ObjectField(shader.Key, typeof(UnityEngine.Object), false);
+                    if (mat != null)
+                        EditorGUILayout.ObjectField(mat, typeof(Material), false);
+                    else if (shader != null)
+                        EditorGUILayout.ObjectField(shader, typeof(Shader), false);
                 }
 
                 EditorGUILayout.EndHorizontal();
 
                 if (isOpen)
                 {
-                    // Display shades usages
+                    // Display usages
                     GUILayout.Space(10);
-                    var uses = _shaderUses[shader.Key];
-                    GUILayout.BeginHorizontal();
-                    EditorGUILayout.LabelField("Material name", EditorStyles.boldLabel);
-                    EditorGUILayout.LabelField("Amount of uses", EditorStyles.boldLabel);
-                    GUILayout.EndHorizontal();
-
-                    foreach (var materialUsePair in uses)
+                    if (mat != null)
                     {
-                        GUILayout.BeginHorizontal();
-                        EditorGUILayout.LabelField($"{materialUsePair.Key.name}");
-                        EditorGUILayout.LabelField($"{materialUsePair.Value}");
-                        GUILayout.EndHorizontal();
+                        DisplayMaterialUses(_materialUses[mat]);
+                    }
+                    else if (shader != null)
+                    {
+                        DisplayShaderUses(_shaderUses[shader]);
                     }
 
                     GUILayout.Space(10);
@@ -186,6 +159,32 @@ namespace Hotspot.Editor
             }
         }
 
+        private void DisplayMaterialUses(IEnumerable<GameObject> gameObjects)
+        {
+            using (var table = new eUtility.SimpleTableView(new[] { "GameObject name", "GameObject path" },
+                       _columnOptions))
+            {
+                foreach (var gameObject in gameObjects)
+                    table.DrawRow(gameObject.name, gameObject.GetFullName());
+            }
+        }
+
+        private void DisplayShaderUses(IEnumerable<KeyValuePair<Material, int>> materialUsePairs)
+        {
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Material name", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Amount of uses", EditorStyles.boldLabel);
+            GUILayout.EndHorizontal();
+
+            foreach (var materialUsePair in materialUsePairs)
+            {
+                GUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"{materialUsePair.Key.name}");
+                EditorGUILayout.LabelField($"{materialUsePair.Value}");
+                GUILayout.EndHorizontal();
+            }
+        }
+        
         private void GetShaderUses(Shader shaderKey)
         {
             var materials = _snapShotRenderers.SelectMany(x => x.sharedMaterials).ToArray();
@@ -204,10 +203,7 @@ namespace Hotspot.Editor
                     .ToArray();
             _materialUses.Add(material, gameObjectsWithTargetMaterial);
         }
-
         
-
-
         private void TakeMaterialSnapshot()
         {
             // TODO: Get the main camera through Magnus camera service
