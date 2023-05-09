@@ -24,7 +24,7 @@ namespace Hotspot
             base.Update();
 
             // NOTE: should only work with Magnus player
-            if (PlayerManager.Instance == null && PlayerManager.Instance.ActivePlayer == null)
+            if (PlayerManager.Instance == null || PlayerManager.Instance.ActivePlayer == null)
                 return;
 
             var mainCamera = Camera.main;
