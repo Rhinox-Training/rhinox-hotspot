@@ -10,15 +10,17 @@ public class VertexOctreeBuilder
 {
     public int _MaxVerticesPerCube = 500;
     public float _minOctreeCubeSize = 1f;
+    public float _vertsPerPixelThreshold = 4f;
 
     private OctreeNode _tree = null;
 
     public OctreeNode Tree => _tree;
 
-    public VertexOctreeBuilder(int maxVerticesPerCube, float minOctreeCubeSize)
+    public VertexOctreeBuilder(int maxVerticesPerCube, float minOctreeCubeSize, float vertsPerPixelThreshold)
     {
         _MaxVerticesPerCube = maxVerticesPerCube;
         _minOctreeCubeSize = minOctreeCubeSize;
+        _vertsPerPixelThreshold = vertsPerPixelThreshold;
     }
 
     public bool CreateOctree()
@@ -39,7 +41,7 @@ public class VertexOctreeBuilder
         float biggestSide = Mathf.Max(Mathf.Max(sceneBound.size.x, sceneBound.size.y), sceneBound.size.z);
         sceneBound.size = new Vector3(biggestSide, biggestSide, biggestSide);
 
-        _tree = new OctreeNode(sceneBound, _MaxVerticesPerCube, _minOctreeCubeSize);
+        _tree = new OctreeNode(sceneBound, _MaxVerticesPerCube, _minOctreeCubeSize, _vertsPerPixelThreshold);
 
         foreach (MeshFilter meshFilter in filters)
         {
@@ -81,7 +83,7 @@ public class VertexOctreeBuilder
         if (_tree == null)
             return 0;
 
-        return _tree.GetVerticesPerPixel(visibleRenderers);
+        return _tree.GetVertsPerPixelHotSpots(visibleRenderers);
     }
 
     public class OctreeNode
@@ -93,14 +95,18 @@ public class VertexOctreeBuilder
 
         private HashSet<Renderer> _renderers = null;
         private List<Vector3> _vertices;
+
+        private readonly float _vertsPerPixelThreshold;
         private readonly float _minSize;
         private readonly int _maxPoints;
 
-        public OctreeNode(Bounds bounds, int maxPoints, float minOctSize = 0.1f)
+        public OctreeNode(Bounds bounds, int maxPoints, float minOctSize = 0.1f, float vertsPerPixelThreshold = 4f)
         {
-            _minSize = minOctSize;
             _bounds = bounds;
             _maxPoints = maxPoints;
+            _minSize = minOctSize;
+            _vertsPerPixelThreshold = vertsPerPixelThreshold;
+
             _vertices = new List<Vector3>();
             _renderers = new HashSet<Renderer>();
         }
@@ -134,24 +140,24 @@ public class VertexOctreeBuilder
                 _renderers.Add(renderer);
 
             if (_vertices.Count > _maxPoints && _bounds.size.x > _minSize)
-                Split(_minSize);
+                Split();
         }
 
-        private void Split(float minSize)
+        private void Split()
         {
             _children = new OctreeNode[8];
 
             float childSize = _bounds.size.x / 2f;
             float offset = _bounds.size.x / 4f;
 
-            _children[0] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            _children[1] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            _children[2] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            _children[3] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            _children[4] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            _children[5] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            _children[6] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
-            _children[7] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, minSize);
+            _children[0] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, _minSize, _vertsPerPixelThreshold);
+            _children[1] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, _minSize, _vertsPerPixelThreshold);
+            _children[2] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, _minSize, _vertsPerPixelThreshold);
+            _children[3] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y - offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, _minSize, _vertsPerPixelThreshold);
+            _children[4] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, _minSize, _vertsPerPixelThreshold);
+            _children[5] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z - offset), new Vector3(childSize, childSize, childSize)), _maxPoints, _minSize, _vertsPerPixelThreshold);
+            _children[6] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x - offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, _minSize, _vertsPerPixelThreshold);
+            _children[7] = new OctreeNode(new Bounds(new Vector3(_bounds.center.x + offset, _bounds.center.y + offset, _bounds.center.z + offset), new Vector3(childSize, childSize, childSize)), _maxPoints, _minSize, _vertsPerPixelThreshold);
 
             for (int i = _vertices.Count - 1; i >= 0; i--)
             {
@@ -202,7 +208,7 @@ public class VertexOctreeBuilder
                 //if the cube's render list contains one of the renderers from the visible renderer list,
                 //then this cube should count towards the visible cube count.
                 //convert bool to int because, true is 1 and false is 0.
-                return Convert.ToInt32(_vertices.Count > _maxPoints && _renderers.ContainsAny(visibleRenderers));
+                return Convert.ToInt32(IsHotSpot() && _renderers.ContainsAny(visibleRenderers));
             }
 
             return count;
@@ -213,33 +219,24 @@ public class VertexOctreeBuilder
             return _vertices.Count > _maxPoints;
         }
 
-        public float GetVerticesPerPixel(in ICollection<Renderer> visibleRenderers)
+        public int GetVertsPerPixelHotSpots(in ICollection<Renderer> visibleRenderers)
         {
-            float avg = 0f;
+            int count = 0;
 
             if (_children != null)
             {
-                int count = 0;
                 foreach (var child in _children)
                 {
-                    //Check if the evaluated node is a hotspot, so that that only counts towards the average
-                    if (child.IsHotSpot())
-                        ++count;
-
-                    avg += child.GetVerticesPerPixel(visibleRenderers);
+                    count += child.GetVertsPerPixelHotSpots(visibleRenderers);
                 }
-
-                if (count > 0)
-                    avg /= count;
             }
             else
             {
-                //Check if this node is visible in the frustum
-                if (_renderers.ContainsAny(visibleRenderers))
-                    return _vertices.Count / BoundsExtensions.GetScreenPixels(_bounds, Camera.main);
+                if (IsHotSpot() && _renderers.ContainsAny(visibleRenderers))
+                    return Convert.ToInt32(_vertices.Count / BoundsExtensions.GetScreenPixels(_bounds, Camera.main) > _vertsPerPixelThreshold);
             }
 
-            return avg;
+            return count;
         }
     }
 }
