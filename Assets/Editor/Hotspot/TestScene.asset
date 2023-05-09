@@ -25,12 +25,12 @@ MonoBehaviour:
   Entries:
   - rid: 8235480153647480839
   - rid: 9169774196034633731
-  - rid: 9169774265395314691
-  - rid: 9169774265395314692
   Statistics:
   - rid: 9169774246337183745
   - rid: 9169774246337183746
-  - rid: 9169774265395314693
+  - rid: 9169774334727684096
+  - rid: 9169774334727684114
+  - rid: 9169774334727684115
   references:
     version: 2
     RefIds:
@@ -63,30 +63,24 @@ MonoBehaviour:
         Filter: 0
     - rid: 9169774265395314688
       type: {class: MainCameraPoseApplier, ns: Hotspot, asm: com.rhinox.open.hotspot}
-    - rid: 9169774265395314691
-      type: {class: MovingViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+    - rid: 9169774334727684096
+      type: {class: UnityProfilerStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
-        Name: 
-        Duration: 5
-        CameraStartPose:
-          position: {x: 0, y: 0, z: 0}
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-        CameraEndPose:
-          position: {x: 0, y: 0, z: 0}
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-    - rid: 9169774265395314692
-      type: {class: MovingViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+        Stat:
+          StatName: Main Thread
+          _serializedCategory: 24
+          SampleCapacity: 1
+    - rid: 9169774334727684114
+      type: {class: UnityProfilerStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
-        Name: 
-        Duration: 5
-        CameraStartPose:
-          position: {x: 0, y: 0, z: 0}
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-        CameraEndPose:
-          position: {x: 0, y: 0, z: 0}
-          rotation: {x: 0, y: 0, z: 0, w: 0}
-    - rid: 9169774265395314693
+        Stat:
+          StatName: Texture Memory
+          _serializedCategory: 23
+          SampleCapacity: 1
+    - rid: 9169774334727684115
       type: {class: UnityProfilerStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
       data:
         Stat:
           StatName: System Used Memory
+          _serializedCategory: 23
+          SampleCapacity: 1
