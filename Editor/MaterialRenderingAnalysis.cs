@@ -270,7 +270,7 @@ namespace Hotspot.Editor
             
             
             // Get the renderers that are visible and in the frustum of the main camera
-            _snapShotRenderers = _renderers.Where(x => x.isVisible).ToArray();
+            _snapShotRenderers = _renderers.Where(x => x != null && x.isVisible).ToArray();
             _snapShotRenderers = _snapShotRenderers.Where(r => r.IsWithinFrustum(mainCamera)).ToArray();
 
             // From these renderers, get all the shared materials into one array.
