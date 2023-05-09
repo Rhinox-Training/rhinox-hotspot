@@ -41,7 +41,7 @@ namespace Hotspot.Editor
             if (_octreeBuilder == null)
             {
                 _octreeBuilder = new VertexOctreeBuilder(_MaxVerticesPerCube, _minOctreeCubeSize, _vertsPerPixelThreshold);
-                _octreeBuilder.CreateOctree();
+                _octreeBuilder.CreateOctree(true);
             }
 
             return true;
