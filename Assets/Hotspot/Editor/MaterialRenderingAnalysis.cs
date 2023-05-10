@@ -105,7 +105,7 @@ namespace Hotspot.Editor
 
             _materialOccurrences.Clear();
             _shaderOccurrences.Clear();
-            
+
             // Get the renderers that are visible and in the frustum of the main camera
             _snapShotRenderers = _renderers.Where(x => x != null && x.isVisible).ToArray();
             _snapShotRenderers = _snapShotRenderers.Where(r => r.IsWithinFrustum(mainCamera)).ToArray();
@@ -128,8 +128,8 @@ namespace Hotspot.Editor
                 .GroupBy(m => m)
                 .Select(g => new KeyValuePair<Material, int>(g.Key, g.Count()));
             foreach (var pair in materialPairs)
-                _materialOccurrences.Add(new MaterialAnalysisInfo(pair.Key, pair.Value, _snapShotRenderers));
-
+                _materialOccurrences.Add(new MaterialAnalysisInfo(pair.Key, pair.Value, _snapShotRenderers, materials));
+            _materialOccurrences.SortByDescending(x => x.AmountOfOccurrences);
 
             // Group the materials by shader name to get the occurrence of each shader.
             // Sort the shader occurrence data in descending order.
@@ -137,6 +137,7 @@ namespace Hotspot.Editor
                 .Select(x => new KeyValuePair<Shader, int>(x.First().shader, x.Count()));
             foreach (var pair in shaderPairs)
                 _shaderOccurrences.Add(new ShaderAnalysisInfo(pair.Key, pair.Value, _snapShotRenderers));
+            _shaderOccurrences.SortByDescending(x => x.AmountOfOccurrences);
         }
     }
 }

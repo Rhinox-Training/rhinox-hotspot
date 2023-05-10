@@ -11,6 +11,7 @@ namespace Hotspot.Editor
     {
         private Shader _shader;
         private int _amountOfOccurrences;
+        public int AmountOfOccurrences => _amountOfOccurrences;
         IEnumerable<KeyValuePair<Material, int>> _shaderUses;
 
         public ShaderAnalysisInfo(Shader shader, int amountOfOccurrences, IEnumerable<Renderer> renderers)
