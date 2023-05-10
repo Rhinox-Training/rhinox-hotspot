@@ -53,14 +53,29 @@ namespace Hotspot.Editor
 
         public static Vector3[] GetVertexData(MeshFilter filter)
         {
-            if (filter == null)
+            if (filter == null || filter.sharedMesh == null)
+                return Array.Empty<Vector3>();
+            
+            var mesh = filter.sharedMesh;
+
+            if (mesh.isReadable)
+                return mesh.vertices;
+
+            if (_vertexCache != null && _vertexCache.ContainsKey(mesh))
+                return _vertexCache[mesh];
+            return Array.Empty<Vector3>();
+        }
+        
+        public static Vector3[] GetVertexData(Mesh mesh)
+        {
+            if (mesh == null)
                 return Array.Empty<Vector3>();
 
-            if (filter.sharedMesh != null && filter.sharedMesh.isReadable)
-                return filter.sharedMesh.vertices;
+            if (mesh.isReadable)
+                return mesh.vertices;
 
-            if (_vertexCache != null && _vertexCache.ContainsKey(filter.sharedMesh))
-                return _vertexCache[filter.sharedMesh];
+            if (_vertexCache != null && _vertexCache.ContainsKey(mesh))
+                return _vertexCache[mesh];
             return Array.Empty<Vector3>();
         }
     }

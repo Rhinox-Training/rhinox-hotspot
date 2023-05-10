@@ -3,6 +3,7 @@ using Rhinox.Lightspeed;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering.RendererUtils;
 
@@ -45,24 +46,32 @@ public class VertexOctreeBuilder
 
         _tree = new OctreeNode(sceneBound, _MaxVerticesPerCube, _minOctreeCubeSize, _vertsPerPixelThreshold);
 
-        foreach (MeshFilter meshFilter in filters)
+        var meshes = filters
+            .Where(x => x.gameObject.TryGetComponent<Renderer>(out var renderer) && !LODRendererCache.IsLOD(renderer))
+            .DistinctBy(x => x.sharedMesh)
+            .ToArray();
+        
+        foreach (MeshFilter meshFilter in meshes)
         {
+            var mesh = meshFilter.sharedMesh;
+            if (mesh == null)
+                continue;
             //first check if the meshfilters renderer is and LOD, if so, discard and goto next
-            if (!meshFilter.gameObject.TryGetComponent<Renderer>(out var renderer))
-                continue;
-
-            if (LODRendererCache.IsLOD(renderer))
-                continue;
+            // if (!mesh.gameObject.TryGetComponent<Renderer>(out var renderer))
+            //     continue;
+            //
+            // if (LODRendererCache.IsLOD(renderer))
+            //     continue;
 
             if (usePlayModeCache)
             {
-                foreach (var point in EditorPlayModeMeshCache.GetVertexData(meshFilter))
-                    _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point), renderer);
+                foreach (var point in EditorPlayModeMeshCache.GetVertexData(mesh))
+                    _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point), mesh);
             }
             else
             {
-                foreach (var point in meshFilter.sharedMesh.vertices)
-                    _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point), renderer);
+                foreach (var point in mesh.vertices)
+                    _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point), mesh);
             }
         }
 
@@ -78,20 +87,20 @@ public class VertexOctreeBuilder
         }
     }
 
-    public int GetUniqueHotSpotCubes(ICollection<Renderer> visibleRenderers)
+    public int GetUniqueHotSpotCubes(ICollection<Mesh> meshes)
     {
         if (_tree == null)
             return 0;
 
-        return _tree.GetUniqueHotSpotCubes(visibleRenderers);
+        return _tree.GetUniqueHotSpotCubes(meshes);
     }
 
-    public float GetVerticesPerPixel(ICollection<Renderer> visibleRenderers)
+    public float GetVerticesPerPixel(ICollection<Mesh> meshes)
     {
         if (_tree == null)
             return 0;
 
-        return _tree.GetVertsPerPixelHotSpots(visibleRenderers);
+        return _tree.GetVertsPerPixelHotSpots(meshes);
     }
 
     public class OctreeNode
@@ -101,7 +110,7 @@ public class VertexOctreeBuilder
         public int VertexCount => _vertices.Count;
 
 
-        private HashSet<Renderer> _renderers = null;
+        private HashSet<Mesh> _originMeshes = null;
         private List<Vector3> _vertices;
 
         private readonly float _vertsPerPixelThreshold;
@@ -116,7 +125,7 @@ public class VertexOctreeBuilder
             _vertsPerPixelThreshold = vertsPerPixelThreshold;
 
             _vertices = new List<Vector3>();
-            _renderers = new HashSet<Renderer>();
+            _originMeshes = new HashSet<Mesh>();
         }
 
         public void Cleanup()
@@ -129,24 +138,24 @@ public class VertexOctreeBuilder
                 }
             }
 
-            _renderers?.Clear();
+            _originMeshes?.Clear();
             _vertices?.Clear();
             _children = null;
         }
 
-        public void Insert(Vector3 point, Renderer renderer = null)
+        public void Insert(Vector3 point, Mesh sourceMesh = null)
         {
             if (_children != null)
             {
                 int index = GetChildIndex(point);
-                _children[index].Insert(point, renderer);
+                _children[index].Insert(point, sourceMesh);
                 return;
             }
 
             _vertices.Add(point);
 
-            if (renderer != null)
-                _renderers.Add(renderer);
+            if (sourceMesh != null)
+                _originMeshes.Add(sourceMesh);
 
             if (_vertices.Count > _maxPoints && _bounds.size.x > _minSize)
                 Split();
@@ -172,16 +181,16 @@ public class VertexOctreeBuilder
             {
                 int index = GetChildIndex(_vertices[i]);
                 _children[index].Insert(_vertices[i]);
-                _children[index].AddRenderers(_renderers);
+                _children[index].AddMeshes(_originMeshes);
                 _vertices.RemoveAt(i);
             }
 
-            _renderers.Clear();
+            _originMeshes.Clear();
         }
 
-        private void AddRenderers(ICollection<Renderer> renderers)
+        private void AddMeshes(ICollection<Mesh> meshes)
         {
-            _renderers.AddRange(renderers);
+            _originMeshes.AddRange(meshes);
         }
 
         private int GetChildIndex(Vector3 point)
@@ -200,7 +209,7 @@ public class VertexOctreeBuilder
             return index;
         }
 
-        public int GetUniqueHotSpotCubes(in ICollection<Renderer> visibleRenderers)
+        public int GetUniqueHotSpotCubes(in ICollection<Mesh> meshes)
         {
             int count = 0;
 
@@ -208,7 +217,7 @@ public class VertexOctreeBuilder
             {
                 foreach (var child in _children)
                 {
-                    count += child.GetUniqueHotSpotCubes(visibleRenderers);
+                    count += child.GetUniqueHotSpotCubes(meshes);
                 }
             }
             else
@@ -217,7 +226,7 @@ public class VertexOctreeBuilder
                 //if the cube's render list contains one of the renderers from the visible renderer list,
                 //then this cube should count towards the visible cube count.
                 //convert bool to int because, true is 1 and false is 0.
-                return Convert.ToInt32(IsHotSpot() && _renderers.ContainsAny(visibleRenderers));
+                return Convert.ToInt32(IsHotSpot() && _originMeshes.ContainsAny(meshes));
             }
 
             return count;
@@ -228,7 +237,7 @@ public class VertexOctreeBuilder
             return _vertices.Count > _maxPoints;
         }
 
-        public int GetVertsPerPixelHotSpots(in ICollection<Renderer> visibleRenderers)
+        public int GetVertsPerPixelHotSpots(in ICollection<Mesh> meshes)
         {
             int count = 0;
 
@@ -236,12 +245,12 @@ public class VertexOctreeBuilder
             {
                 foreach (var child in _children)
                 {
-                    count += child.GetVertsPerPixelHotSpots(visibleRenderers);
+                    count += child.GetVertsPerPixelHotSpots(meshes);
                 }
             }
             else
             {
-                if (IsHotSpot() && _renderers.ContainsAny(visibleRenderers))
+                if (IsHotSpot() && _originMeshes.ContainsAny(meshes))
                     return Convert.ToInt32(_vertices.Count / BoundsExtensions.GetScreenPixels(_bounds, Camera.main) > _vertsPerPixelThreshold);
             }
 
