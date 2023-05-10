@@ -18,6 +18,12 @@ namespace Hotspot.Editor
         private IEnumerable<KeyValuePair<Mesh, GameObject>> _materialUses;
         private IEnumerable<KeyValuePair<string, int>> _keyWordCombinations;
 
+        private Vector2 _usesScrollPosition;
+
+        private int _currentPageIndex;
+        private int _amountOfElementsPerPage = 25;
+        private readonly PageableReorderableList _materialUsesListView;
+
         public MaterialAnalysisInfo(Material material, int amountOfOccurrences, IEnumerable<Renderer> renderers,
             IEnumerable<Material> allMaterials)
         {
@@ -25,6 +31,12 @@ namespace Hotspot.Editor
             _amountOfOccurrences = amountOfOccurrences;
             _materialUses = GetMaterialUses(renderers);
             GetKeywordSpread(allMaterials);
+
+            _materialUsesListView = new PageableReorderableList(_materialUses.ToList())
+            {
+                MaxItemsPerPage = _amountOfElementsPerPage
+            };
+            _materialUsesListView.drawElementCallback += OnDrawListElement;
         }
 
         private void GetKeywordSpread(IEnumerable<Material> allMaterials)
@@ -40,12 +52,13 @@ namespace Hotspot.Editor
                 .Select(g => new KeyValuePair<IEnumerable<LocalKeyword>, int>(g.Key, g.Count()));
 
             // Create the return value
-            Dictionary<string, int> returnValue = new ();
-            
+            Dictionary<string, int> returnValue = new();
+
             // Process all the groups
             foreach (var group in groups)
             {
-                string keywordCombo = group.Key.Aggregate(string.Empty, (current, keyWords) => current + (keyWords.ToString() + " "));
+                string keywordCombo = group.Key.Aggregate(string.Empty,
+                    (current, keyWords) => current + (keyWords.ToString() + " "));
                 if (returnValue.ContainsKey(keywordCombo))
                     returnValue[keywordCombo] += group.Value;
                 else
@@ -64,7 +77,7 @@ namespace Hotspot.Editor
                     break;
                 }
             }
-            
+
             // Set the value
             _keyWordCombinations = returnValue;
         }
@@ -105,6 +118,8 @@ namespace Hotspot.Editor
             }
 
             GUILayout.Space(10f);
+
+
             GUILayout.Label("Material Keyword Combinations", EditorStyles.boldLabel);
             GUILayout.Label($"Amount of combinations: {_keyWordCombinations.Count()}", EditorStyles.boldLabel);
             foreach (var pair in _keyWordCombinations)
@@ -120,19 +135,33 @@ namespace Hotspot.Editor
             GUILayout.Label("GameObject Full name", EditorStyles.boldLabel);
             GUILayout.Label("Ping in Hierarchy", EditorStyles.boldLabel, GUILayout.Width(EditorGUIUtility.labelWidth));
             GUILayout.EndHorizontal();
+            
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Label("Amount of elements per page: ");
+            _amountOfElementsPerPage = EditorGUILayout.IntField(_amountOfElementsPerPage);
+            EditorGUILayout.EndHorizontal();
+            _materialUsesListView.DoLayoutList(GUIContent.none);
+        }
 
-            foreach (var materialUsePair in _materialUses)
+        private static void RenderListElement(KeyValuePair<Mesh, GameObject> materialUsePair)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"{materialUsePair.Key.name}");
+            GUILayout.Label($"{materialUsePair.Value.GetFullName()}");
+            if (GUILayout.Button("Ping", GUILayout.Width(EditorGUIUtility.labelWidth)))
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label($"{materialUsePair.Key.name}");
-                GUILayout.Label($"{materialUsePair.Value.GetFullName()}");
-                if (GUILayout.Button("Ping", GUILayout.Width(EditorGUIUtility.labelWidth)))
-                {
-                    EditorGUIUtility.PingObject(materialUsePair.Value);
-                }
-
-                GUILayout.EndHorizontal();
+                EditorGUIUtility.PingObject(materialUsePair.Value);
             }
+
+            GUILayout.EndHorizontal();
+        }
+
+        private void OnDrawListElement(Rect rect, int index, bool isactive, bool isfocused)
+        {
+            var element = _materialUses.ElementAt(index);
+            GUILayout.BeginArea(rect);
+            RenderListElement(element);
+            GUILayout.EndArea();
         }
     }
 }
