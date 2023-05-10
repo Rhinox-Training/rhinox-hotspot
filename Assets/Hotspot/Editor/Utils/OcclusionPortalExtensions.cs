@@ -16,6 +16,8 @@ namespace Hotspot.Editor
             centerProperty.SetValue(center);
             var sizeProperty = so.FindProperty(k_SizePath);
             sizeProperty.SetValue(size);
+            if (so.hasModifiedProperties)
+                so.ApplyModifiedProperties();
         }
 
         public static void UpdateBounds(this OcclusionPortal portal, Bounds bounds)
@@ -27,9 +29,9 @@ namespace Hotspot.Editor
         {
             var so = new SerializedObject(portal);
             var centerProperty = so.FindProperty(k_CenterPath);
-            Vector3 center = (Vector3) centerProperty.GetValue();
+            Vector3 center = (Vector3)centerProperty.GetValue();
             var sizeProperty = so.FindProperty(k_SizePath);
-            Vector3 size = (Vector3) sizeProperty.GetValue();
+            Vector3 size = (Vector3)sizeProperty.GetValue();
             return new Bounds(center, size);
         }
     }

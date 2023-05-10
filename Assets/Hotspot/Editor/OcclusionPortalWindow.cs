@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
+using System;
+using static PlasticGui.PlasticTableColumn;
 
 namespace Hotspot.Editor
 {
@@ -46,11 +48,23 @@ namespace Hotspot.Editor
                     if (mat.IsKeywordEnabled("_SURFACE_TYPE_TRANSPARENT"))
                     {
                         var portal = renderer.gameObject.GetOrAddComponent<OcclusionPortal>();
-                        portal.UpdateBounds(renderer.bounds);
+                        portal.UpdateBounds(renderer.localBounds);
                         _occlusionPortalDictionary.Add(renderer.gameObject, portal);
                         break;
                     }
                 }
+            }
+        }
+
+        private void GetAllPortalsInScene()
+        {
+            _occlusionPortalDictionary.Clear();
+
+            var portals = UnityEngine.Object.FindObjectsOfType<OcclusionPortal>();
+
+            foreach (var portal in portals)
+            {
+                _occlusionPortalDictionary.Add(portal.gameObject, portal);
             }
         }
 
@@ -59,18 +73,43 @@ namespace Hotspot.Editor
             //base.OnGUI();
             EditorGUILayout.Space(5f);
             EditorGUILayout.BeginVertical();
-            if (GUILayout.Button("Generate Portals", GUILayout.ExpandWidth(true)))
-                GeneratePortals();
+
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Button("Load Portals", GUILayout.ExpandWidth(true));
-            GUILayout.Button("Save Portals", GUILayout.ExpandWidth(true));
+            if (GUILayout.Button("Generate New Portals", GUILayout.ExpandWidth(true)))
+                GeneratePortals();
+            if (GUILayout.Button("Get All Portals Scene ", GUILayout.ExpandWidth(true)))
+                GetAllPortalsInScene();
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.BeginHorizontal();
+            GUILayout.Button("Load Portals From File", GUILayout.ExpandWidth(true));
+            GUILayout.Button("Save Portals From File", GUILayout.ExpandWidth(true));
+            EditorGUILayout.EndHorizontal();
+
             EditorGUILayout.Space(5f);
 
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.MaxHeight(300f));
+            GUIStyle gUIStyle = new GUIStyle()
+            {
+            };
+
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandHeight(true), GUILayout.MaxHeight(300f));
             foreach (var item in _occlusionPortalDictionary)
             {
+                EditorGUILayout.BeginHorizontal();
+                //EditorGUILayout.BeginVertical();
+                //EditorGUILayout.PropertyField(new SerializedObject(item.Value).FindProperty("m_Center"));
+                //EditorGUILayout.PropertyField(new SerializedObject(item.Value).FindProperty("m_Size"));
+                //EditorGUILayout.EndVertical();
+                EditorGUILayout.LabelField($"{item.Key.name}");
 
+                if (GUILayout.Button("GOTO"))
+                {
+                    Selection.activeObject = item.Value;
+                    EditorGUIUtility.PingObject(item.Key);
+                    SceneView.lastActiveSceneView.Frame(new Bounds(item.Value.GetBounds().center, Vector3.one), false);
+                }
+                //EditorGUILayout.LabelField($"{item.Value.name}");
+                EditorGUILayout.EndHorizontal();
             }
 
             EditorGUILayout.EndScrollView();
