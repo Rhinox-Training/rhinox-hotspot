@@ -32,6 +32,7 @@ namespace Hotspot.Editor
         private float _hotVertsPerPixelCount = 0;
 
         private static VertexOctreeBuilder _octreeBuilder;
+        private HashSet<Mesh> _meshList;
 
         public override bool StartNewRun()
         {
@@ -74,13 +75,35 @@ namespace Hotspot.Editor
 
         protected override void HandleObjectsChanged(ICollection<Renderer> visibleRenderers)
         {
+            if (_meshList == null)
+                _meshList = new HashSet<Mesh>();
+            else
+                _meshList.Clear();
+
+            foreach (var renderer in visibleRenderers)
+            {
+                if (renderer == null)
+                    continue;
+                
+                if (renderer is MeshRenderer meshRenderer)
+                {
+                    var filter = meshRenderer.GetComponent<MeshFilter>();
+                    if (filter != null && filter.sharedMesh != null)
+                        _meshList.Add(filter.sharedMesh);
+                }
+                else if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
+                {
+                    if (skinnedMeshRenderer.sharedMesh != null)
+                        _meshList.Add(skinnedMeshRenderer.sharedMesh);
+                }
+            }
             switch (_mode)
             {
                 case VertexDensityMode.Simple:
-                    _cubesInViewCount = _octreeBuilder.GetUniqueHotSpotCubes(visibleRenderers);
+                    _cubesInViewCount = _octreeBuilder.GetUniqueHotSpotCubes(_meshList);
                     break;
                 case VertexDensityMode.Advanced:
-                    _hotVertsPerPixelCount = _octreeBuilder.GetVerticesPerPixel(visibleRenderers);
+                    _hotVertsPerPixelCount = _octreeBuilder.GetVerticesPerPixel(_meshList);
                     break;
             }
         }

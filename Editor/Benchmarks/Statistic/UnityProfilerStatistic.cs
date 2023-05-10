@@ -189,7 +189,7 @@ namespace Hotspot.Editor
             else if (Stat == UnityDebugProfilerStats.ObjectCount)
                 return UnitConverter.DefaultConverter;
             else if (Stat.Category == ProfilerCategory.Memory)
-                return UnitConverter.MegabyteConverter;
+                return Stat.StatName.ContainsInvariantCultureIgnoreCase("count") ? UnitConverter.DefaultConverter : UnitConverter.MegabyteConverter;
             return UnitConverter.DefaultConverter;
         }
     }
