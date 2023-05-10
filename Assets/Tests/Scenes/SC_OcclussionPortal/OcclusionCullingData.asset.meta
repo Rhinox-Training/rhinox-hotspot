@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD
 guid: 032628279bae21d439943c143167351a
+=======
+guid: a8603eae87657c44cac60dbf758411e4
+>>>>>>> 4c7e57b (finished OcclusionPortal Editor window)
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 36300000

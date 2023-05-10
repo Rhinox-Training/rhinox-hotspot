@@ -1,5 +1,9 @@
 fileFormatVersion: 2
+<<<<<<< HEAD
 guid: f9a0fc601317a234284bdda8c5c165cc
+=======
+guid: b75b92037453a3243b0e72cc5cd00f1e
+>>>>>>> 4c7e57b (finished OcclusionPortal Editor window)
 folderAsset: yes
 DefaultImporter:
   externalObjects: {}
