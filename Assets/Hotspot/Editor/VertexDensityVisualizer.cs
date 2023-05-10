@@ -1,10 +1,7 @@
 using UnityEngine;
 using UnityEditor;
-using System.Collections.Generic;
 using Rhinox.Utilities.Editor;
 using Rhinox.Lightspeed;
-using Hotspot.Editor;
-using Rhinox.Utilities;
 
 #if UNITY_EDITOR
 using Rhinox.GUIUtils.Editor;

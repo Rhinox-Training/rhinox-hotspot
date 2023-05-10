@@ -103,6 +103,11 @@ public class VertexOctreeBuilder
         return _tree.GetVertsPerPixelHotSpots(meshes);
     }
 
+    public float GetRenderedVertexDensity(Renderer renderer, Camera camera)
+    {
+        return _tree?.GetRenderedVertexDensity(renderer, camera) ?? 0;
+    }
+
     public class OctreeNode
     {
         public OctreeNode[] _children { get; private set; }
