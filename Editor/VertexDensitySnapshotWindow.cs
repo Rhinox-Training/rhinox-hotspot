@@ -82,7 +82,7 @@ namespace Hotspot.Editor
             Profiler.EndSample();
         }
 
-        protected override void TakeSnapshot()
+        private void TakeSnapshot()
         {
             _octreeBuilder = new VertexOctreeBuilder(_maxVerticesPerCube, _minOctreeCubeSize, _vertsPerPixelThreshold);
             _octreeBuilder.CreateOctree(true);
