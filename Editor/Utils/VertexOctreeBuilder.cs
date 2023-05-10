@@ -48,14 +48,18 @@ public class VertexOctreeBuilder
 
         var meshes = filters
             .Where(x => x.gameObject.TryGetComponent<Renderer>(out var renderer) && !LODRendererCache.IsLOD(renderer))
-            .DistinctBy(x => x.sharedMesh)
             .ToArray();
-        
+
+        var parsedMeshes = new List<Mesh>();
         foreach (MeshFilter meshFilter in meshes)
         {
             var mesh = meshFilter.sharedMesh;
             if (mesh == null)
                 continue;
+
+            if (mesh.name.StartsWith("Combined Mesh (root:") && parsedMeshes.Contains(mesh))
+                continue;
+            
             //first check if the meshfilters renderer is and LOD, if so, discard and goto next
             // if (!mesh.gameObject.TryGetComponent<Renderer>(out var renderer))
             //     continue;
@@ -73,6 +77,8 @@ public class VertexOctreeBuilder
                 foreach (var point in mesh.vertices)
                     _tree.Insert(meshFilter.gameObject.transform.TransformPoint(point), mesh);
             }
+
+            parsedMeshes.Add(mesh);
         }
 
         return _tree.VertexCount > 0 || _tree._children != null;
