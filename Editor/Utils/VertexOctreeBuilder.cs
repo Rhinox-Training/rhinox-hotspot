@@ -256,5 +256,79 @@ public class VertexOctreeBuilder
 
             return count;
         }
+
+        public float GetRenderedVertexDensity(Renderer renderer, Camera camera)
+        {
+            if (renderer == null)
+                return 0.0f;
+            Mesh m = null;
+            Bounds b = new Bounds();
+            if (renderer is MeshRenderer meshRenderer)
+            {
+                var meshFilter = meshRenderer.GetComponent<MeshFilter>();
+                if (meshFilter == null)
+                    return 0.0f;
+                m = meshFilter.sharedMesh;
+                b = meshRenderer.bounds;
+            }
+            else if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
+            {
+                m = skinnedMeshRenderer.sharedMesh;
+                b = skinnedMeshRenderer.bounds;
+            }
+
+            if (m == null)
+                return 0.0f;
+            
+            var info = GetRenderedVertexDensityInfo(m, b, camera);
+            if (info.ScreenOccupation <= float.Epsilon)
+                return 0.0f;
+            return info.VertexCount / info.ScreenOccupation;
+        }
+
+        private struct VertexDensityInfo
+        {
+            public int VertexCount;
+            public float ScreenOccupation;
+
+            public void MergeWith(VertexDensityInfo other)
+            {
+                ScreenOccupation += other.ScreenOccupation;
+                VertexCount += other.VertexCount;
+            }
+        }
+        
+        private VertexDensityInfo GetRenderedVertexDensityInfo(Mesh mesh, Bounds rendererBounds, Camera camera)
+        {
+            VertexDensityInfo info = new VertexDensityInfo()
+            {
+                ScreenOccupation = 0.0f,
+                VertexCount = 0
+            };
+
+            if (_children != null)
+            {
+                foreach (var child in _children)
+                {
+                    var childInfo = child.GetRenderedVertexDensityInfo(mesh, rendererBounds, camera);
+                    if (childInfo.ScreenOccupation > float.Epsilon)
+                        info.MergeWith(childInfo);
+                }
+            }
+            else
+            {
+                if (IsHotSpot() && _originMeshes.Contains(mesh))
+                {
+                    var hotspotInfo = new VertexDensityInfo()
+                    {
+                        VertexCount = _vertices.Count(x => rendererBounds.Contains(x)),
+                        ScreenOccupation = BoundsExtensions.GetScreenPixels(_bounds, camera != null ? camera : Camera.main)
+                    };
+                    return hotspotInfo;
+                }
+            }
+
+            return info;
+        }
     }
 }
