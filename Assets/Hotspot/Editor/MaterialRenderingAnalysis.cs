@@ -21,12 +21,8 @@ namespace Hotspot.Editor
 
         private Renderer[] _snapShotRenderers;
 
-        private IEnumerable<KeyValuePair<Shader, int>> _shaderOccurrence = null;
-        private IEnumerable<KeyValuePair<Material, int>> _materialOccurence = null;
-
-        private Dictionary<Material, KeyValuePair<Mesh, GameObject>[]> _materialUses = new();
-
-        private Dictionary<Shader, KeyValuePair<Material, int>[]> _shaderUses = new();
+        private List<MaterialAnalysisInfo> _materialOccurrences = new();
+        private List<ShaderAnalysisInfo> _shaderOccurrences = new();
 
         [MenuItem(HotspotWindowHelper.ANALYSIS_PREFIX + "Rendered Material Analysis", false, 1500)]
         public static void ShowWindow()
@@ -61,186 +57,25 @@ namespace Hotspot.Editor
                 TakeMaterialSnapshot();
             }
 
-            if (_shaderOccurrence != null)
+            if (_shaderOccurrences != null)
             {
-                RenderShaderInfo();
-                RenderMaterialInfo();
+                RenderInfo(_materialOccurrences, "Occurrence of Materials:");
+                RenderInfo(_shaderOccurrences, "Occurrence of Shaders:");
             }
 
             GUILayout.EndScrollView();
         }
 
-        private void RenderMaterialInfo()
+        private void RenderInfo(IEnumerable<AnalysisInfo> occurrences, string paragraphTitle)
         {
-            RenderInfo(_materialOccurence, _materialUses, GetMaterialUses, "Occurrence of Materials:");
-        }
-
-        private void RenderShaderInfo()
-        {
-            RenderInfo(_shaderOccurrence, _shaderUses, GetShaderUses, "Occurrence of Shaders:");
-        }
-
-        private void RenderInfo<T, TU>(IEnumerable<KeyValuePair<T, int>> occurrence, IDictionary<T, TU> uses,
-            Action<T> getUses, string paragraphTitle)
-        {
-            if (typeof(T) != typeof(Material) && typeof(T) != typeof(Shader))
-            {
-                PLog.Warn<HotspotLogger>(
-                    $"[MaterialRenderingAnalysis,RenderInfo], function is not implemented for type {typeof(T)}");
-                return;
-            }
-
             GUILayout.Space(5f);
             CustomEditorGUI.Title(paragraphTitle, EditorStyles.boldLabel);
             GUILayout.Space(10f);
 
-            foreach (var item in occurrence)
+            foreach (var item in occurrences)
             {
-                EditorGUILayout.BeginHorizontal();
-                bool isOpen = uses.ContainsKey(item.Key);
-
-                string iconName = isOpen ? "Fa_AngleUp" : "Fa_AngleDown";
-                if (CustomEditorGUI.IconButton(UnityIcon.AssetIcon(iconName)))
-                {
-                    // If the icon is open                        
-                    if (isOpen)
-                        uses.Remove(item.Key);
-                    else
-                        getUses(item.Key);
-
-                    // Toggle open status
-                    isOpen = !isOpen;
-                }
-
-                Material mat = item.Key as Material;
-                Shader shader = item.Key as Shader;
-
-                // Display name and its occurrence
-                if (mat != null)
-                    EditorGUILayout.LabelField($"{mat.name}: {item.Value}");
-                else if (shader != null)
-                    EditorGUILayout.LabelField($"{shader.name}: {item.Value}");
-
-                using (new eUtility.DisabledGroup())
-                {
-                    if (mat != null)
-                        EditorGUILayout.ObjectField(mat, typeof(Material), false);
-                    else if (shader != null)
-                        EditorGUILayout.ObjectField(shader, typeof(Shader), false);
-                }
-
-                EditorGUILayout.EndHorizontal();
-
-                if (isOpen)
-                {
-                    // Display usages
-                    GUILayout.Space(10);
-                    if (mat != null)
-                    {
-                        DisplayMaterialInfo(mat);
-                        DisplayMaterialUses(_materialUses[mat]);
-                    }
-                    else if (shader != null)
-                    {
-                        DisplayShaderInfo(shader);
-                        DisplayShaderUses(_shaderUses[shader]);
-                    }
-
-                    GUILayout.Space(10);
-                }
+                item.OnGUI();
             }
-        }
-
-        private void DisplayShaderInfo(Shader shader)
-        {
-            GUILayout.Label("Shader Info", EditorStyles.boldLabel);
-            GUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel("Amount of passes: ");
-            EditorGUILayout.LabelField(shader.passCount.ToString());
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel("Amount of keywords: ");
-            EditorGUILayout.LabelField(shader.keywordSpace.keywordCount.ToString());
-            GUILayout.EndHorizontal();
-        }
-
-        private void DisplayMaterialInfo(Material mat)
-        {
-            GUILayout.Label("Material Info", EditorStyles.boldLabel);
-            GUILayout.BeginHorizontal();
-            EditorGUILayout.PrefixLabel("Shader: ");
-            EditorGUILayout.LabelField(mat.shader.name);
-            GUILayout.EndHorizontal();
-
-            foreach (string keywordName in mat.shaderKeywords)
-            {
-                GUILayout.Label(keywordName, EditorStyles.miniLabel);
-            }
-            
-        }
-
-        private void DisplayMaterialUses(IEnumerable<KeyValuePair<Mesh, GameObject>> meshGameObjectPairs)
-        {
-            GUILayout.Space(5f);
-
-            GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Applied Mesh", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("GameObject Full name", EditorStyles.boldLabel);
-            GUILayout.EndHorizontal();
-
-            foreach (var materialUsePair in meshGameObjectPairs)
-            {
-                GUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"{materialUsePair.Key.name}");
-                EditorGUILayout.LabelField($"{materialUsePair.Value.GetFullName()}");
-                if (GUILayout.Button("Ping"))
-                {
-                    EditorGUIUtility.PingObject(materialUsePair.Value);
-                }
-
-                GUILayout.EndHorizontal();
-            }
-        }
-
-        private void DisplayShaderUses(IEnumerable<KeyValuePair<Material, int>> materialUsePairs)
-        {
-            GUILayout.Space(5f);
-            GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Material name", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Amount of uses", EditorStyles.boldLabel);
-            GUILayout.EndHorizontal();
-
-            foreach (var materialUsePair in materialUsePairs)
-            {
-                GUILayout.BeginHorizontal();
-                EditorGUILayout.LabelField($"{materialUsePair.Key.name}");
-                EditorGUILayout.LabelField($"{materialUsePair.Value}");
-                GUILayout.EndHorizontal();
-            }
-        }
-
-        private void GetShaderUses(Shader shaderKey)
-        {
-            var materials = _snapShotRenderers.SelectMany(x => x.sharedMaterials).ToArray();
-            var materialsWithShaderInstance = materials.Where(m => m.shader.name == shaderKey.name).ToArray();
-            var occurencePairs = materialsWithShaderInstance
-                .GroupBy(m => m)
-                .Select(g => new KeyValuePair<Material, int>(g.Key, g.Count())).ToArray();
-            occurencePairs.SortByDescending(x => x.Value);
-            _shaderUses.Add(shaderKey, occurencePairs);
-        }
-
-        private void GetMaterialUses(Material material)
-        {
-            var gameObjectsWithTargetMaterial =
-                _snapShotRenderers.Where(r => r.sharedMaterials.Any(m => m == material)).Select(r => r.gameObject)
-                    .ToArray();
-            
-            _materialUses.Add(material,
-                (from gameObject in gameObjectsWithTargetMaterial
-                    let mesh = gameObject.GetComponent<MeshFilter>().sharedMesh
-                    select new KeyValuePair<Mesh, GameObject>(mesh, gameObject)).ToArray());
         }
 
         private void TakeMaterialSnapshot()
@@ -267,7 +102,9 @@ namespace Hotspot.Editor
             {
                 mainCamera = SceneView.GetAllSceneCameras()[0];
             }
-            
+
+            _materialOccurrences.Clear();
+            _shaderOccurrences.Clear();
             
             // Get the renderers that are visible and in the frustum of the main camera
             _snapShotRenderers = _renderers.Where(x => x != null && x.isVisible).ToArray();
@@ -287,16 +124,19 @@ namespace Hotspot.Editor
 
             // Group the materials by themselves to get the occurrence of each material.
             // Sort the material occurrence data in descending order.
-            _materialOccurence = materials
+            var materialPairs = materials
                 .GroupBy(m => m)
                 .Select(g => new KeyValuePair<Material, int>(g.Key, g.Count()));
-            _materialOccurence = _materialOccurence.OrderByDescending(x => x.Value);
+            foreach (var pair in materialPairs)
+                _materialOccurrences.Add(new MaterialAnalysisInfo(pair.Key, pair.Value, _snapShotRenderers));
+
 
             // Group the materials by shader name to get the occurrence of each shader.
             // Sort the shader occurrence data in descending order.
-            _shaderOccurrence = materials.GroupBy(x => x.shader.name)
+            var shaderPairs = materials.GroupBy(x => x.shader.name)
                 .Select(x => new KeyValuePair<Shader, int>(x.First().shader, x.Count()));
-            _shaderOccurrence = _shaderOccurrence.OrderByDescending(x => x.Value);
+            foreach (var pair in shaderPairs)
+                _shaderOccurrences.Add(new ShaderAnalysisInfo(pair.Key, pair.Value, _snapShotRenderers));
         }
     }
 }
