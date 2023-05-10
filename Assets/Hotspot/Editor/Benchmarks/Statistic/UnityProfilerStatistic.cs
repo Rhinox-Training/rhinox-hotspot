@@ -186,6 +186,8 @@ namespace Hotspot.Editor
         {
             if (Stat == UnityDebugProfilerStats.MainThreadTime)
                 return UnitConverter.ThreadMillisecondConverter;
+            else if (Stat == UnityDebugProfilerStats.ObjectCount)
+                return UnitConverter.DefaultConverter;
             else if (Stat.Category == ProfilerCategory.Memory)
                 return UnitConverter.MegabyteConverter;
             return UnitConverter.DefaultConverter;
