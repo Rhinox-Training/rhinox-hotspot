@@ -9,6 +9,7 @@ using Rhinox.GUIUtils.Editor;
 
 namespace Rhinox.Hotspot.Editor
 {
+    //TODO: add on scene changing to empty the visual
     public class VertexDensityVisualizer : CustomSceneOverlayWindow<VertexDensityVisualizer>
     {
         protected override string Name => "Vertex Density Visualizer";

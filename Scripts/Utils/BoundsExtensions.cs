@@ -26,4 +26,15 @@ public static class BoundsExtensions
         var rect = ToScreenSpace(bounds, camera);
         return rect.width * rect.height;
     }
+
+    public static Bounds AddMarginToExtends(this Bounds bounds, Vector3 margin)
+    {
+        bounds.extents += margin;
+        return bounds;
+    }
+
+    public static Bounds AddMarginToExtends(this Bounds bounds, float margin)
+    {
+        return bounds.AddMarginToExtends(new Vector3(margin, margin, margin));
+    }
 }
