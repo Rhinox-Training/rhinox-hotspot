@@ -20,7 +20,8 @@ namespace Hotspot.Editor
         private int _maxVerticesPerCube = 500;
         private float _minOctreeCubeSize = 1f;
         private float _vertsPerPixelThreshold = 4f;
-        private Dictionary<Renderer, float> _densityValues;
+        private Dictionary<Renderer, float> _filteredDensityValues;
+        private Dictionary<Renderer, float> _allDensityValues;
 
         private PageableReorderableList _pageableList;
         private int _itemsPerPage = 10;
@@ -47,23 +48,30 @@ namespace Hotspot.Editor
 
         protected override void OnGUI()
         {
-            Profiler.BeginSample("VertexDensity");
             CustomEditorGUI.Title("Snapshot settings:", EditorStyles.boldLabel);
             GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Min vertex density: ");
-            _minDensity = EditorGUILayout.FloatField(_minDensity);
+            {
+                EditorGUILayout.LabelField("Min vertex density: ");
+                _minDensity = EditorGUILayout.FloatField(_minDensity);
+            }
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Max Vertices PerCube: ");
-            _maxVerticesPerCube = EditorGUILayout.IntField(_maxVerticesPerCube);
+            {
+                EditorGUILayout.LabelField("Max Vertices PerCube: ");
+                _maxVerticesPerCube = EditorGUILayout.IntField(_maxVerticesPerCube);
+            }
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Min Octree CubeSize: ");
-            _minOctreeCubeSize = EditorGUILayout.FloatField(_minOctreeCubeSize);
+            {
+                EditorGUILayout.LabelField("Min Octree CubeSize: ");
+                _minOctreeCubeSize = EditorGUILayout.FloatField(_minOctreeCubeSize);
+            }
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Vertices per pixel threshold: ");
-            _vertsPerPixelThreshold = EditorGUILayout.FloatField(_vertsPerPixelThreshold);
+            {
+                EditorGUILayout.LabelField("Vertices per pixel threshold: ");
+                _vertsPerPixelThreshold = EditorGUILayout.FloatField(_vertsPerPixelThreshold);
+            }
             GUILayout.EndHorizontal();
 
             if (GUILayout.Button("Take Snapshot"))
@@ -71,15 +79,29 @@ namespace Hotspot.Editor
                 TakeSnapshot();
             }
 
-            if (_densityValues == null || !_densityValues.Any())
+            if (_filteredDensityValues != null && _filteredDensityValues.Any())
             {
-                Profiler.EndSample();
-                return;
+                _pageableList.DoLayoutList(GUIContent.none);
             }
-            
-            _pageableList.DoLayoutList(GUIContent.none);
 
-            Profiler.EndSample();
+            CustomEditorGUI.Title("Distribution");
+            if (_allDensityValues != null)
+            {
+                GUILayout.BeginHorizontal( EditorStyles.helpBox );
+                {
+                    GUILayout.Space(24.0f);
+                    GUIChartEditor.BeginChart(10, 100, 100, 200, Color.black,
+                        GUIChartEditorOptions.ChartBounds(0.0f, 1.0f, 0.0f, _allDensityValues.Count / 2.0f),
+                        GUIChartEditorOptions.SetOrigin(ChartOrigins.BottomLeft),
+                        GUIChartEditorOptions.ShowAxes(Color.white),
+                        GUIChartEditorOptions.ShowGrid(0.1f, _allDensityValues.Count / 20.0f, Color.gray, true)
+                        /*,GUIChartEditorOptions.ShowLabels("0.##", 1f, 1f, -0.1f, 1f, -0.075f, 1f)*/);
+                    GUIChartEditor.PushDataToDistribution(_allDensityValues.Values, Color.red);
+                    GUIChartEditor.EndChart();
+                    GUILayout.Space(4.0f);
+                }
+                GUILayout.EndHorizontal();
+            }
         }
 
         private void TakeSnapshot()
@@ -102,24 +124,36 @@ namespace Hotspot.Editor
                 if (mainCamera == null)
                 {
                     PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
-                    return;
+                    mainCamera = Camera.main;
                 }
             }
             else
                 mainCamera = SceneView.GetAllSceneCameras()[0];
 
+            var visibleRenderersInView = _renderers.Where(x => x != null && x.isVisible && x.IsWithinFrustum(mainCamera));
+            _allDensityValues = new Dictionary<Renderer, float>();
+            _filteredDensityValues = new Dictionary<Renderer, float>();
+            foreach (var r in visibleRenderersInView)
+            {
+                float density = _octreeBuilder.GetRenderedVertexDensity(r, mainCamera);
+                if (density > _minDensity)
+                    _filteredDensityValues.Add(r, density);
+                _allDensityValues.Add(r, density);
+                
+            }
+
             // Fetch the visible renderers and the density values
-            var value = (_renderers
-                .Where(x => x != null && x.isVisible && x.IsWithinFrustum(mainCamera))
-                .Select(r =>
-                    new KeyValuePair<Renderer, float>(r, _octreeBuilder.GetRenderedVertexDensity(r, mainCamera)))
-                .Where(x => x.Value > _minDensity)
-                .OrderByDescending(x => x.Value));
-            
-            _densityValues = value.ToDictionary(x => x.Key, x => x.Value);
+            // var value = (_renderers
+            //     .Where(x => x != null && x.isVisible && x.IsWithinFrustum(mainCamera))
+            //     .Select(r =>
+            //         new KeyValuePair<Renderer, float>(r, _octreeBuilder.GetRenderedVertexDensity(r, mainCamera)))
+            //     .Where(x => x.Value > _minDensity)
+            //     .OrderByDescending(x => x.Value));
+            //
+            // _filteredDensityValues = value.ToDictionary(x => x.Key, x => x.Value);
             
             // Create the pageable list
-            _pageableList = new PageableReorderableList(_densityValues.ToList())
+            _pageableList = new PageableReorderableList(_filteredDensityValues.Select(x => x).OrderByDescending(x => x.Value).ToList())
             {
                 MaxItemsPerPage = _itemsPerPage,
                 DisplayAdd = false,
@@ -131,7 +165,7 @@ namespace Hotspot.Editor
 
         private void OnDrawElement(Rect rect, int index, bool isactive, bool isfocused)
         {
-            var element = _densityValues.ElementAt(index);
+            var element = _filteredDensityValues.ElementAt(index);
             GUILayout.BeginArea(rect);
             GUILayout.BeginHorizontal();
             GUILayout.Label(element.Value.ToString());

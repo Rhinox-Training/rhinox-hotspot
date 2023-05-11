@@ -261,7 +261,7 @@ public class VertexOctreeBuilder
             }
             else
             {
-                if (IsHotSpot() && _originMeshes.ContainsAny(meshes))
+                if (_vertices.Count > 0 && _originMeshes.ContainsAny(meshes))
                     return Convert.ToInt32(_vertices.Count / BoundsExtensions.GetScreenPixels(_bounds, Camera.main) > _vertsPerPixelThreshold);
             }
 
@@ -328,7 +328,7 @@ public class VertexOctreeBuilder
             }
             else
             {
-                if (IsHotSpot() && _originMeshes.Contains(mesh))
+                if (_vertices.Count > 0 && _originMeshes.Contains(mesh))
                 {
                     var hotspotInfo = new VertexDensityInfo()
                     {
