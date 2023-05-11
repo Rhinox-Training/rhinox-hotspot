@@ -272,41 +272,14 @@ public class VertexOctreeBuilder
         {
             if (renderer == null)
                 return 0.0f;
-            Mesh m = null;
-            Bounds b = new Bounds();
-            if (renderer is MeshRenderer meshRenderer)
-            {
-                var meshFilter = meshRenderer.GetComponent<MeshFilter>();
-                if (meshFilter == null)
-                    return 0.0f;
-                m = meshFilter.sharedMesh;
-                b = meshRenderer.bounds;
-            }
-            else if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
-            {
-                m = skinnedMeshRenderer.sharedMesh;
-                b = skinnedMeshRenderer.bounds;
-            }
-
-            if (m == null)
+            
+            if (MeshInfo.TryCreate(renderer, out MeshInfo mi))
                 return 0.0f;
             
-            var info = GetRenderedVertexDensityInfo(m, b, camera);
+            var info = GetRenderedVertexDensityInfo(mi.Mesh, mi.RendererBounds, camera);
             if (info.ScreenOccupation <= float.Epsilon)
                 return 0.0f;
             return info.VertexCount / info.ScreenOccupation;
-        }
-
-        private struct VertexDensityInfo
-        {
-            public int VertexCount;
-            public float ScreenOccupation;
-
-            public void MergeWith(VertexDensityInfo other)
-            {
-                ScreenOccupation += other.ScreenOccupation;
-                VertexCount += other.VertexCount;
-            }
         }
         
         private VertexDensityInfo GetRenderedVertexDensityInfo(Mesh mesh, Bounds rendererBounds, Camera camera)
