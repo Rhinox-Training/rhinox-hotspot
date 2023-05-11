@@ -23,11 +23,11 @@ namespace Hotspot.Editor
 
         private IEnumerable<KeyValuePair<Material, int>> GetShaderUses(IEnumerable<Renderer> renderers)
         {
-            var materials = renderers.SelectMany(x => x.sharedMaterials).ToArray();
-            var materialsWithShaderInstance = materials.Where(m => m.shader.name == _shader.name).ToArray();
-            var occurencePairs = materialsWithShaderInstance
+            var occurencePairs = renderers.SelectMany(x => x.sharedMaterials)
+                .Where(m => m != null).Where(m => m.shader.name == _shader.name)
                 .GroupBy(m => m)
                 .Select(g => new KeyValuePair<Material, int>(g.Key, g.Count())).ToArray();
+            
             occurencePairs.SortByDescending(x => x.Value);
             return occurencePairs;
         }
