@@ -1,5 +1,4 @@
-﻿using Codice.Client.ChangeTrackerService;
-using Rhinox.Lightspeed;
+﻿using Rhinox.Lightspeed;
 using UnityEngine;
 
 namespace Hotspot
