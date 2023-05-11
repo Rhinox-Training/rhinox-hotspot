@@ -73,7 +73,10 @@ namespace Hotspot.Editor
 
             if (mesh.isReadable)
                 return mesh.vertices;
-
+            
+            if (Application.isPlaying == false)
+                return mesh.vertices;
+            
             if (_vertexCache != null && _vertexCache.ContainsKey(mesh))
                 return _vertexCache[mesh];
             return Array.Empty<Vector3>();
