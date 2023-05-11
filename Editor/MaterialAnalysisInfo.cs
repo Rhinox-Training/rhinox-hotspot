@@ -89,8 +89,10 @@ namespace Hotspot.Editor
                     .ToArray();
 
             var returnVal = from gameObject in gameObjectsWithTargetMaterial
+                where gameObject.GetComponent<MeshFilter>() != null
                 let mesh = gameObject.GetComponent<MeshFilter>().sharedMesh
                 select new KeyValuePair<Mesh, GameObject>(mesh, gameObject);
+
 
             return returnVal;
         }

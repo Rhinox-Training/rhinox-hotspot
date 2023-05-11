@@ -112,7 +112,8 @@ namespace Hotspot.Editor
 
             // From these renderers, get all the shared materials into one array.
             var materials = _snapShotRenderers.SelectMany(x => x.sharedMaterials).ToArray();
-
+            materials = materials.Where(x => x != null).ToArray();
+            
             // Find out all unique shaders and names used in these materials.
             var uniqueShaders = materials.Select(x => x.shader).Distinct().ToArray();
             var uniqueShaderNames = uniqueShaders.Select(x => x.name).Distinct().ToArray();
