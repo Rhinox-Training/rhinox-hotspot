@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ac0c0afbf8a4dda80a1ab0c16a13171, type: 3}
+  m_Name: SC_VertexCounter
+  m_EditorClassIdentifier: 
+  Scene:
+    sceneGuid: 6ced7c13d38ff3e4098a757e18d30faa
+    scenePath: Assets/Hotspot/Scenes/SC_VertexCounter.unity
+  PoseApplierType:
+    _assemblyName: com.rhinox.open.hotspot, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    _assemblyQualifiedName: Hotspot.MainCameraPoseApplier, com.rhinox.open.hotspot,
+      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+    _name: MainCameraPoseApplier
+  PoseApplier:
+    rid: 2224544141372817411
+  Entries:
+  - rid: 2224544124573319176
+  Statistics:
+  - rid: 2224544141372817415
+  - rid: 2224544213569896449
+  references:
+    version: 2
+    RefIds:
+    - rid: 2224544124573319176
+      type: {class: StaticViewpointStage, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        Name: Start
+        Duration: 5
+        CameraPose:
+          position: {x: 0, y: 2.5, z: -10}
+          rotation: {x: 0, y: 0, z: 0, w: 1}
+    - rid: 2224544141372817411
+      type: {class: MainCameraPoseApplier, ns: Hotspot, asm: com.rhinox.open.hotspot}
+    - rid: 2224544141372817415
+      type: {class: VertexDensityStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        _mode: 0
+        _MaxVerticesPerCube: 25
+        _minOctreeCubeSize: 0.25
+    - rid: 2224544213569896449
+      type: {class: VertexDensityStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        _mode: 1
+        _MaxVerticesPerCube: 25
+        _minOctreeCubeSize: 0.25

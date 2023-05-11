@@ -116,3 +116,8 @@ bakery_times.log
 Corda_BackUpThisFolder_ButDontShipItWithYourGame/
 Corda_BurstDebugInformation_DoNotShip/
 [Ss]creenshots
+
+Hotspot/Exports
+Hotspot/*
+Hotspots/Exports
+Hotspots/*
