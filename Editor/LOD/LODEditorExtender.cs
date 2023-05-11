@@ -1,6 +1,12 @@
+using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Rhinox.GUIUtils.Editor;
+using Rhinox.Lightspeed;
+using Rhinox.Lightspeed.IO;
 using Rhinox.Magnus;
 using Rhinox.Perceptor;
 using UnityEditor;
@@ -44,6 +50,98 @@ namespace Hotspot.Editor
                 LODGroup lod = (LODGroup)target;
                 GetVertexDensity(lod);
             }
+
+            if (GUILayout.Button("Test"))
+            {
+                LODGroup lod = (LODGroup)target;
+                Test(lod);
+            }
+        }
+
+        private void Test(LODGroup lodGroup)
+        {
+            Camera mainCamera = Camera.main;
+            Utils.CameraInfo cameraInfo = mainCamera.gameObject.GetOrAddComponent<Utils.CameraInfo>();
+            Vector3 pos = lodGroup.transform.position;
+            cameraInfo.SetCameraInfo(mainCamera);
+            
+            var temp = mainCamera.worldToCameraMatrix;
+            var unityCol0 = temp.GetColumn(0);
+            var unityCol1 = temp.GetColumn(1); 
+            var unityCol2 = temp.GetColumn(2);
+            var unityCol3 = temp.GetColumn(3); 
+            
+            var temp2 = cameraInfo.GetViewMatrix();
+            var camInfoCol0 = temp2.GetColumn(0);
+            var camInfoCol1 = temp2.GetColumn(1);
+            var camInfoCol2 = temp2.GetColumn(2);
+            var camInfoCol3 = temp2.GetColumn(3); 
+            
+            if(!unityCol0.Equals(camInfoCol0))
+                Debug.LogWarning("Right");
+            if (!unityCol1.Equals(camInfoCol1))
+                Debug.LogWarning("Up");
+            if (!unityCol2.Equals(camInfoCol2))
+                Debug.LogWarning("Forward");
+            if (!unityCol3.Equals(camInfoCol3))
+                Debug.LogWarning("Position");
+
+        }
+
+        private void RunTest(LODGroup lodGroup)
+        {
+            Camera mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
+            }
+
+            const int SAMPLE_SIZE = 15;
+            const float SAMPLE_DISTANCE_OFFSET = 5f;
+
+            var transform = mainCamera.transform;
+            transform.LookAt(lodGroup.gameObject.transform);
+            List<float> distances = new List<float>();
+            List<List<float>> sampleEntries = new();
+            for (int sampleID = 0; sampleID < SAMPLE_SIZE; sampleID++)
+            {
+                distances.Add(Vector3.Distance(transform.position, lodGroup.gameObject.transform.position));
+                sampleEntries.Add(new List<float>());
+                foreach (LOD lod in lodGroup.GetLODs())
+                {
+                    float avgDensity = lod.renderers.Sum(renderer =>
+                        VertexDensityUtility.CalculateVertexDensity(renderer, mainCamera).Density);
+                    avgDensity /= lod.renderers.Length;
+                    sampleEntries[sampleID].Add(avgDensity);
+                }
+
+                transform.position -= transform.forward * SAMPLE_DISTANCE_OFFSET;
+            }
+
+            var table = new DataTable();
+            table.Columns.Add("Distance");
+            for (int i = 0; i < lodGroup.GetLODs().Length; i++)
+            {
+                table.Columns.Add($"LOD {i}");
+            }
+
+            for (int i = 0; i < SAMPLE_SIZE; i++)
+            {
+                var row = table.NewRow();
+                row["Distance"] = distances[i];
+                for (int j = 0; j < lodGroup.GetLODs().Length; j++)
+                {
+                    row[$"LOD {j}"] = sampleEntries[i][j];
+                }
+
+                table.Rows.Add(row);
+            }
+
+            string csvFileStr = table.ToCsv();
+            FileInfo info = new FileInfo("DensityTest.csv");
+            FileHelper.CreateDirectoryIfNotExists(info.DirectoryName);
+            File.WriteAllText("DensityTest.csv", csvFileStr);
+
         }
 
         private void OptimizeLODs(LODGroup lodGroup)
