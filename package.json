@@ -10,8 +10,8 @@
   ],
   "category": "Unity",
   "dependencies": {
-    "com.rhinox.open.utilities": "1.5.4",
-	"com.rhinox.open.guiutils": "2.8.0"
+    "com.rhinox.open.magnus": "0.5.7",
+    "com.rhinox.open.utilities": "1.6.0"
   },
   "repository": {
     "type": "git",
