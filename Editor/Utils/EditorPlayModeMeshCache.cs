@@ -57,13 +57,7 @@ namespace Hotspot.Editor
                 return Array.Empty<Vector3>();
             
             var mesh = filter.sharedMesh;
-
-            if (mesh.isReadable)
-                return mesh.vertices;
-
-            if (_vertexCache != null && _vertexCache.ContainsKey(mesh))
-                return _vertexCache[mesh];
-            return Array.Empty<Vector3>();
+            return GetVertexData(mesh);
         }
         
         public static Vector3[] GetVertexData(Mesh mesh)
@@ -71,10 +65,7 @@ namespace Hotspot.Editor
             if (mesh == null)
                 return Array.Empty<Vector3>();
 
-            if (mesh.isReadable)
-                return mesh.vertices;
-            
-            if (Application.isPlaying == false)
+            if (mesh.isReadable || !Application.isPlaying)
                 return mesh.vertices;
             
             if (_vertexCache != null && _vertexCache.ContainsKey(mesh))
