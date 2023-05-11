@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Hotspot.Editor.Utils;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,11 +16,14 @@ namespace Hotspot.Editor
 
         static EditorPlayModeMeshCache()
         {
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            EditorApplicationExt.PlayModeStateChanged += OnPlayModeStateChanged;
         }
 
-        private static void OnPlayModeStateChanged(PlayModeStateChange obj)
+        private static void OnPlayModeStateChanged(PlayModeStateChange obj, PlayModeEnterMode mode)
         {
+            if (mode == PlayModeEnterMode.Normal)
+                return;
+            
             if (obj == PlayModeStateChange.EnteredPlayMode)
             {
                 if (_vertexCache == null)
