@@ -12,6 +12,7 @@ namespace Hotspot.Editor
 {
     public class OcclusionPortalWindow : CustomEditorWindow
     {
+        private const float _scrollViewMaxHeight = 300f;
         private Dictionary<GameObject, OcclusionPortal> _occlusionPortalDictionary = new Dictionary<GameObject, OcclusionPortal>();
         private Vector2 _scrollPos;
         private int _selectedPortalIndex = -1;
@@ -101,7 +102,7 @@ namespace Hotspot.Editor
             _boundsMargin = EditorGUILayout.Vector3Field("Portal bounds margin: ", _boundsMargin, GUILayout.ExpandWidth(true));
             EditorGUILayout.Space(5f);
 
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandHeight(true), GUILayout.MaxHeight(300f));
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandHeight(true), GUILayout.MaxHeight(_scrollViewMaxHeight));
 
             int index = 0;
             foreach (var item in _occlusionPortalDictionary)
