@@ -13,6 +13,9 @@ namespace Hotspot.Editor
     public class OcclusionPortalWindow : CustomEditorWindow
     {
         private const float _scrollViewMaxHeight = 300f;
+        private const float _normalButtonHeight = 30f;
+        private const float _RemoveAllButtonHeight = 20f;
+
         private Dictionary<GameObject, OcclusionPortal> _occlusionPortalDictionary = new Dictionary<GameObject, OcclusionPortal>();
         private Vector2 _scrollPos;
         private int _selectedPortalIndex = -1;
@@ -84,25 +87,52 @@ namespace Hotspot.Editor
 
         protected override void OnGUI()
         {
-            float _width = GUI.skin.label.CalcSize(new GUIContent("#9999:")).x;
-
-
-            //base.OnGUI();
-            EditorGUILayout.Space(5f);
             EditorGUILayout.BeginVertical();
+            EditorGUILayout.Space(5f);
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Generate New Portals", GUILayout.ExpandWidth(true)))
+            if (GUILayout.Button("Generate New Portals", GUILayout.Height(_normalButtonHeight), GUILayout.ExpandWidth(true)))
                 GeneratePortals();
-            if (GUILayout.Button("Get All Portals Scene ", GUILayout.ExpandWidth(true)))
+            if (GUILayout.Button("Get All Portals Scene", GUILayout.Height(_normalButtonHeight), GUILayout.ExpandWidth(true)))
                 GetAllPortalsInScene();
             EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space(5f);
+
+            if (GUILayout.Button("REMOVE ALL PORTALS IN SCENE", GUILayout.Height(_RemoveAllButtonHeight), GUILayout.ExpandWidth(true)))
+                RemoveAllPortals();
+
 
             EditorGUILayout.Space(5f);
             _boundsMargin = EditorGUILayout.Vector3Field("Portal bounds margin: ", _boundsMargin, GUILayout.ExpandWidth(true));
             EditorGUILayout.Space(5f);
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandHeight(true), GUILayout.MaxHeight(_scrollViewMaxHeight));
+
+            ShowExistingOcclusionPortals();
+
+            EditorGUILayout.EndScrollView();
+
+            EditorGUILayout.Space(5f);
+            EditorGUILayout.BeginHorizontal();
+            HandleFooterButtons();
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.Space(5f);
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void RemoveAllPortals()
+        {
+            _occlusionPortalDictionary.Clear();
+            var portals = UnityEngine.Object.FindObjectsOfType<OcclusionPortal>();
+
+            foreach (var portal in portals)
+                DestroyImmediate(portal);
+        }
+
+        private void ShowExistingOcclusionPortals()
+        {
+            float _width = GUI.skin.label.CalcSize(new GUIContent("#9999:")).x;
 
             int index = 0;
             foreach (var item in _occlusionPortalDictionary)
@@ -130,12 +160,10 @@ namespace Hotspot.Editor
                 EditorGUILayout.EndHorizontal();
                 ++index;
             }
+        }
 
-            EditorGUILayout.EndScrollView();
-
-            EditorGUILayout.Space(5f);
-            EditorGUILayout.BeginHorizontal();
-
+        private void HandleFooterButtons()
+        {
             using (new eUtility.DisabledGroup(_occlusionPortalDictionary.Count == 0))
             {
                 if (GUILayout.Button("<-- Previous", GUILayout.ExpandWidth(true)))
@@ -171,16 +199,15 @@ namespace Hotspot.Editor
                     SelectItemInScene(_occlusionPortalDictionary.ElementAt(_selectedPortalIndex));
                 }
             }
-
-            EditorGUILayout.EndHorizontal();
-            EditorGUILayout.Space(5f);
-            EditorGUILayout.EndVertical();
         }
 
         private void SelectItemInScene(KeyValuePair<GameObject, OcclusionPortal> item)
         {
             Selection.activeObject = item.Value;
             EditorGUIUtility.PingObject(item.Key);
+            //var rendererBound = item.Value.GetComponent<Renderer>().bounds;
+            //rendererBound.center += item.Key.transform.position;
+            //SceneView.lastActiveSceneView.Frame(rendererBound, false);
             SceneView.lastActiveSceneView.Frame(item.Value.GetComponent<Renderer>().bounds, false);
         }
     }
