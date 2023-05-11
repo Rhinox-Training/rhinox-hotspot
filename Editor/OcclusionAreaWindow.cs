@@ -48,7 +48,7 @@ public class OcclusionAreaWindow : CustomEditorWindow
         base.Initialize();
 
         _serObj = new SerializedObject(this);
-        _serProp = _serObj.FindProperty("_navMeshAreasMask");
+        _serProp = _serObj.FindProperty(nameof(_navMeshAreasMask));
     }
 
     private void GenerateOcclusionAreas()
@@ -135,10 +135,10 @@ public class OcclusionAreaWindow : CustomEditorWindow
             RemoveAllAreas();
         EditorGUILayout.Space(5f);
 
-        { 
-        _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandHeight(true), GUILayout.MaxHeight(_scrollViewMaxHeight));
-        ShowExistingAreas();
-        EditorGUILayout.EndScrollView();
+        {
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandHeight(true), GUILayout.MaxHeight(_scrollViewMaxHeight));
+            ShowExistingAreas();
+            EditorGUILayout.EndScrollView();
         }
 
         EditorGUILayout.Space(5f);

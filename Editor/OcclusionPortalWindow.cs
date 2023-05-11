@@ -16,10 +16,17 @@ namespace Hotspot.Editor
         private const float _normalButtonHeight = 30f;
         private const float _RemoveAllButtonHeight = 20f;
 
+        public List<Material> _allowedMaterials = new List<Material>();
+        public List<string> _allowedMeshNameKeywords = new List<string>();
+
         private Dictionary<GameObject, OcclusionPortal> _occlusionPortalDictionary = new Dictionary<GameObject, OcclusionPortal>();
         private Vector2 _scrollPos;
         private int _selectedPortalIndex = -1;
         private Vector3 _boundsMargin = new Vector3(0.05f, 0.05f, 0.05f);
+
+        private SerializedObject _serObj;
+        private SerializedProperty _serMatListProp;
+        private SerializedProperty _serKeyWordListProp;
 
         [MenuItem("Tools/HotSpot/Occlusion Portal Editor", false, 50)]
 
@@ -32,6 +39,11 @@ namespace Hotspot.Editor
         protected override void Initialize()
         {
             base.Initialize();
+
+            _serObj = new SerializedObject(this);
+            _serMatListProp = _serObj.FindProperty(nameof(_allowedMaterials));
+            _serKeyWordListProp = _serObj.FindProperty(nameof(_allowedMeshNameKeywords));
+
 
             _occlusionPortalDictionary ??= new Dictionary<GameObject, OcclusionPortal>();
 
@@ -55,21 +67,39 @@ namespace Hotspot.Editor
 
             foreach (var renderer in renderers)
             {
-                foreach (var mat in renderer.sharedMaterials)
+                var filter = renderer.GetComponent<MeshFilter>();
+
+                //check if the renderer his meshfilter meets the requirements
+                if (renderer.sharedMaterials.ContainsAny(_allowedMaterials) &&
+                    filter.sharedMesh.name.ContainsOneOf(_allowedMeshNameKeywords.ToArray()))
+                //    if (renderer.sharedMaterials.ContainsAny(_allowedMaterials))
                 {
-                    if (mat == null)
-                        return;
+                    //    if (filter.sharedMesh.name.ContainsOneOf(_allowedMeshNameKeywords.ToArray()))
+                    //    {
+                    var portal = renderer.gameObject.GetOrAddComponent<OcclusionPortal>();
+                    var localMargin = renderer.transform.InverseTransformVector(_boundsMargin);
+                    portal.UpdateBounds(renderer.localBounds.AddMarginToExtends(localMargin.Abs()));
 
-                    if (mat.IsKeywordEnabled("_SURFACE_TYPE_TRANSPARENT"))
-                    {
-                        var portal = renderer.gameObject.GetOrAddComponent<OcclusionPortal>();
-                        var localMargin = renderer.transform.InverseTransformVector(_boundsMargin);
-                        portal.UpdateBounds(renderer.localBounds.AddMarginToExtends(localMargin.Abs()));
-
-                        _occlusionPortalDictionary.Add(renderer.gameObject, portal);
-                        break;
-                    }
+                    _occlusionPortalDictionary.Add(renderer.gameObject, portal);
+                    //}
                 }
+
+
+                //foreach (var mat in renderer.sharedMaterials)
+                //{
+                //    if (mat == null)
+                //        return;
+
+                //    if (mat.IsKeywordEnabled("_SURFACE_TYPE_TRANSPARENT"))
+                //    {
+                //        var portal = renderer.gameObject.GetOrAddComponent<OcclusionPortal>();
+                //        var localMargin = renderer.transform.InverseTransformVector(_boundsMargin);
+                //        portal.UpdateBounds(renderer.localBounds.AddMarginToExtends(localMargin.Abs()));
+
+                //        _occlusionPortalDictionary.Add(renderer.gameObject, portal);
+                //        break;
+                //    }
+                //}
             }
         }
 
@@ -90,21 +120,33 @@ namespace Hotspot.Editor
             EditorGUILayout.BeginVertical();
             EditorGUILayout.Space(5f);
 
-            EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("Generate New Portals", GUILayout.Height(_normalButtonHeight), GUILayout.ExpandWidth(true)))
-                GeneratePortals();
-            if (GUILayout.Button("Get All Portals Scene", GUILayout.Height(_normalButtonHeight), GUILayout.ExpandWidth(true)))
-                GetAllPortalsInScene();
-            EditorGUILayout.EndHorizontal();
+            {
+                EditorGUILayout.BeginHorizontal();
+                if (GUILayout.Button("Generate New Portals", GUILayout.Height(_normalButtonHeight), GUILayout.ExpandWidth(true)))
+                    GeneratePortals();
+                if (GUILayout.Button("Get All Portals Scene", GUILayout.Height(_normalButtonHeight), GUILayout.ExpandWidth(true)))
+                    GetAllPortalsInScene();
+                EditorGUILayout.EndHorizontal();
+            }
+
             EditorGUILayout.Space(5f);
 
             if (GUILayout.Button("REMOVE ALL PORTALS IN SCENE", GUILayout.Height(_RemoveAllButtonHeight), GUILayout.ExpandWidth(true)))
                 RemoveAllPortals();
 
+            EditorGUILayout.Space(5f);
 
-            EditorGUILayout.Space(5f);
             _boundsMargin = EditorGUILayout.Vector3Field("Portal bounds margin: ", _boundsMargin, GUILayout.ExpandWidth(true));
-            EditorGUILayout.Space(5f);
+
+            {
+                EditorGUILayout.Space(7f);
+                EditorGUILayout.PropertyField(_serMatListProp);
+                EditorGUILayout.PropertyField(_serKeyWordListProp);
+                EditorGUILayout.Space(7f);
+                if (_serObj.hasModifiedProperties)
+                    _serObj.ApplyModifiedProperties();
+            }
+
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUILayout.ExpandHeight(true), GUILayout.MaxHeight(_scrollViewMaxHeight));
 
