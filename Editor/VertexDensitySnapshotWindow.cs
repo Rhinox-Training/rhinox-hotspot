@@ -26,6 +26,8 @@ namespace Hotspot.Editor
         private PageableReorderableList _pageableList;
         private int _itemsPerPage = 10;
         private float _minDensity = 0.1f;
+        private float _maxDensity = 100.0f;
+        private DistributionInfo _distributionInfo = new DistributionInfo() {Min = 0.0f, Max = 100.0f};
 
         [MenuItem(HotspotWindowHelper.ANALYSIS_PREFIX + "Vertex Density Snapshot", false, 1500)]
         public static void ShowWindow()
@@ -51,12 +53,6 @@ namespace Hotspot.Editor
             CustomEditorGUI.Title("Snapshot settings:", EditorStyles.boldLabel);
             GUILayout.BeginHorizontal();
             {
-                EditorGUILayout.LabelField("Min vertex density: ");
-                _minDensity = EditorGUILayout.FloatField(_minDensity);
-            }
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            {
                 EditorGUILayout.LabelField("Max Vertices PerCube: ");
                 _maxVerticesPerCube = EditorGUILayout.IntField(_maxVerticesPerCube);
             }
@@ -78,12 +74,6 @@ namespace Hotspot.Editor
             {
                 TakeSnapshot();
             }
-
-            if (_filteredDensityValues != null && _filteredDensityValues.Any())
-            {
-                _pageableList.DoLayoutList(GUIContent.none);
-            }
-
             CustomEditorGUI.Title("Distribution");
             if (_allDensityValues != null)
             {
@@ -96,12 +86,36 @@ namespace Hotspot.Editor
                         GUIChartEditorOptions.ShowAxes(Color.white),
                         GUIChartEditorOptions.ShowGrid(0.1f, _allDensityValues.Count / 20.0f, Color.gray, true)
                         /*,GUIChartEditorOptions.ShowLabels("0.##", 1f, 1f, -0.1f, 1f, -0.075f, 1f)*/);
-                    GUIChartEditor.PushDataToDistribution(_allDensityValues.Values, Color.red);
+                    _distributionInfo = GUIChartEditor.PushDataToDistribution(_allDensityValues.Values, Color.red);
                     GUIChartEditor.EndChart();
                     GUILayout.Space(4.0f);
                 }
                 GUILayout.EndHorizontal();
             }
+
+            GUILayout.BeginHorizontal();
+            {
+                float oldMinDensity = _minDensity;
+                float oldMaxDensity = _maxDensity;
+                EditorGUILayout.MinMaxSlider("Filter View:", ref _minDensity, ref _maxDensity, Mathf.Max(_distributionInfo.Min, 0.0f), Mathf.Min(_distributionInfo.Max, 100.0f));
+                if (!oldMinDensity.LossyEquals(_minDensity) || !oldMaxDensity.LossyEquals(_maxDensity))
+                {
+                    _filteredDensityValues.Clear();
+                    foreach (var r in _allDensityValues.Keys)
+                    {
+                        float density = _allDensityValues[r];
+                        if (density >= _minDensity && density <= _maxDensity)
+                            _filteredDensityValues.Add(r, density);
+                
+                    }
+                }
+            }
+            GUILayout.EndHorizontal();
+            if (_filteredDensityValues != null && _filteredDensityValues.Any())
+            {
+                _pageableList.DoLayoutList(GUIContent.none);
+            }
+
         }
 
         private void TakeSnapshot()
