@@ -30,8 +30,16 @@ namespace Hotspot.Editor.Utils
         static EditorApplicationExt()
         {
             RecreateModeSettingsValue();
-            if (!EditorApplication.isPlayingOrWillChangePlaymode)
-                _modeSettings.Set(PlayModeEnterMode.Normal);
+            EditorApplication.delayCall += () =>
+            {
+                // NOTE:
+                // When Unity enters Play mode, static state is cleared and recreated, reinitializing all static data
+                // This prevents us from leveraging static state to take information from Edit mode into Play mode
+                // Thus we leverage the file-backed PersistentValue instead
+                // We need to delay this call here, since isPlayingOrWillChangePlayMode is not set to true when the static constructors are run on entering PlayMode
+                if (!EditorApplication.isPlayingOrWillChangePlaymode && _modeSettings != null)
+                    _modeSettings.Set(PlayModeEnterMode.Normal);
+            };
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
