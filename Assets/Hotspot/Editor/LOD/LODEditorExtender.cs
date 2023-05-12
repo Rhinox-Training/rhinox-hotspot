@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.Lightspeed;
 using Rhinox.Lightspeed.IO;
@@ -66,26 +64,34 @@ namespace Hotspot.Editor
             cameraInfo.SetCameraInfo(mainCamera);
             
             var temp = mainCamera.worldToCameraMatrix;
-            var unityCol0 = temp.GetColumn(0);
-            var unityCol1 = temp.GetColumn(1); 
-            var unityCol2 = temp.GetColumn(2);
-            var unityCol3 = temp.GetColumn(3); 
-            
             var temp2 = cameraInfo.GetViewMatrix();
-            var camInfoCol0 = temp2.GetColumn(0);
-            var camInfoCol1 = temp2.GetColumn(1);
-            var camInfoCol2 = temp2.GetColumn(2);
-            var camInfoCol3 = temp2.GetColumn(3); 
+            CompareMatrices(temp, temp2);
             
-            if(!unityCol0.Equals(camInfoCol0))
-                Debug.LogWarning("Right");
-            if (!unityCol1.Equals(camInfoCol1))
-                Debug.LogWarning("Up");
-            if (!unityCol2.Equals(camInfoCol2))
-                Debug.LogWarning("Forward");
-            if (!unityCol3.Equals(camInfoCol3))
-                Debug.LogWarning("Position");
+            var temp3 = mainCamera.projectionMatrix;
+            var temp4 = cameraInfo.GetProjectionMatrix();
+            CompareMatrices(temp3, temp4);
+        }
 
+        private static void CompareMatrices(Matrix4x4 m1, Matrix4x4 m2)
+        {
+            var unityCol0 = m1.GetColumn(0);
+            var unityCol1 = m1.GetColumn(1);
+            var unityCol2 = m1.GetColumn(2);
+            var unityCol3 = m1.GetColumn(3);
+
+            var camInfoCol0 = m2.GetColumn(0);
+            var camInfoCol1 = m2.GetColumn(1);
+            var camInfoCol2 = m2.GetColumn(2);
+            var camInfoCol3 = m2.GetColumn(3);
+
+            if (!unityCol0.Equals(camInfoCol0))
+                Debug.LogWarning("First Column not equal");
+            if (!unityCol1.Equals(camInfoCol1))
+                Debug.LogWarning("Second Column not equal");
+            if (!unityCol2.Equals(camInfoCol2))
+                Debug.LogWarning("Third Column not equal");
+            if (!unityCol3.Equals(camInfoCol3))
+                Debug.LogWarning("Fourth Column not equal");
         }
 
         private void RunTest(LODGroup lodGroup)
@@ -96,14 +102,14 @@ namespace Hotspot.Editor
                 PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
             }
 
-            const int SAMPLE_SIZE = 15;
-            const float SAMPLE_DISTANCE_OFFSET = 5f;
+            const int sampleSize = 15;
+            const float sampleDistanceOffset = 5f;
 
             var transform = mainCamera.transform;
             transform.LookAt(lodGroup.gameObject.transform);
             List<float> distances = new List<float>();
             List<List<float>> sampleEntries = new();
-            for (int sampleID = 0; sampleID < SAMPLE_SIZE; sampleID++)
+            for (int sampleID = 0; sampleID < sampleSize; sampleID++)
             {
                 distances.Add(Vector3.Distance(transform.position, lodGroup.gameObject.transform.position));
                 sampleEntries.Add(new List<float>());
@@ -115,7 +121,7 @@ namespace Hotspot.Editor
                     sampleEntries[sampleID].Add(avgDensity);
                 }
 
-                transform.position -= transform.forward * SAMPLE_DISTANCE_OFFSET;
+                transform.position -= transform.forward * sampleDistanceOffset;
             }
 
             var table = new DataTable();
@@ -125,7 +131,7 @@ namespace Hotspot.Editor
                 table.Columns.Add($"LOD {i}");
             }
 
-            for (int i = 0; i < SAMPLE_SIZE; i++)
+            for (int i = 0; i < sampleSize; i++)
             {
                 var row = table.NewRow();
                 row["Distance"] = distances[i];
