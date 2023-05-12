@@ -17,6 +17,8 @@ public class VertexOctreeBuilder
 
     public OctreeNode Tree => _tree;
 
+    public int TotalVertexCount => _tree?.TotalVertexCount ?? 0;
+
     public VertexOctreeBuilder(int maxVerticesPerCube, float minOctreeCubeSize, float vertsPerPixelThreshold)
     {
         _MaxVerticesPerCube = maxVerticesPerCube;
@@ -119,6 +121,25 @@ public class VertexOctreeBuilder
         public OctreeNode[] _children { get; private set; }
         public Bounds _bounds { get; private set; }
         public int VertexCount => _vertices.Count;
+
+        public int TotalVertexCount
+        {
+            get
+            {
+                if (_children != null)
+                {
+                    int count = 0;
+                    foreach (var child in _children)
+                    {
+                        count += child.TotalVertexCount;
+                    }
+
+                    return count;
+                }
+
+                return VertexCount;
+            }
+        }
 
 
         private HashSet<Mesh> _originMeshes = null;
@@ -273,7 +294,7 @@ public class VertexOctreeBuilder
             if (renderer == null)
                 return 0.0f;
             
-            if (MeshInfo.TryCreate(renderer, out MeshInfo mi))
+            if (!MeshInfo.TryCreate(renderer, out MeshInfo mi))
                 return 0.0f;
             
             var info = GetRenderedVertexDensityInfo(mi.Mesh, mi.RendererBounds, camera);
