@@ -2,28 +2,29 @@
 
 namespace Hotspot.Editor.Utils
 {
-    public class CameraInfo : MonoBehaviour
+    public class CameraInfo
     {
         private float _aspectRatio;
         private float _nearClipPlane;
         private float _farClipPlane;
 
         private Matrix4x4 _viewMatrix;
-
         private Matrix4x4 _projectionMatrix;
-        
         private float _fov;
+        private Vector3 _position;
 
+        private static readonly Vector3 _up = new Vector3(0, 1, 0);
+        private static readonly Vector3 _forward = new Vector3(0, 0, 1);
+        private static readonly Vector3 _right = new Vector3(1, 0, 0);
 
         public void SetCameraInfo(Camera cam)
         {
-            // transform.transform.position = cam.transform.position;
-            // transform.transform.rotation = cam.transform.rotation;
-            //
+            _position = cam.transform.position;
+
             _aspectRatio = cam.aspect;
             _nearClipPlane = cam.nearClipPlane;
             _farClipPlane = cam.farClipPlane;
-            
+
             _fov = Mathf.Tan((Mathf.Deg2Rad * cam.fieldOfView) / 2f);
 
             RecalculateViewMatrix();
@@ -36,16 +37,10 @@ namespace Hotspot.Editor.Utils
 
         public void TranslateCamera(Vector3 translation)
         {
-            transform.Translate(translation);
+            _position += translation;
             RecalculateViewMatrix();
         }
-
-        public void RotateCamera(Vector3 rotation)
-        {
-            transform.Rotate(rotation);
-            RecalculateViewMatrix();
-        }
-
+        
         public Matrix4x4 GetViewMatrix()
         {
             return _viewMatrix;
@@ -53,17 +48,16 @@ namespace Hotspot.Editor.Utils
 
         private void RecalculateViewMatrix()
         {
-            var transformCached = transform;
-            var right = transformCached.right;
-            var up = transformCached.up;
-            var back = -transformCached.forward;
-            var position = transformCached.position;
+            var right = _right;
+            var up = _up;
+            var back = -_forward;
+            var position = _position;
 
             _viewMatrix = new Matrix4x4(
-                new Vector4(right.x, -right.y, right.z, 0),
+                new Vector4(right.x, right.y, right.z, 0),
                 new Vector4(up.x, up.y, up.z, 0),
                 new Vector4(back.x, -back.y, back.z, 0),
-                new Vector4(-position.x, -position.y, position.z, 1));
+                new Vector4(position.x, position.y, position.z, 1));
         }
 
         public Matrix4x4 GetProjectionMatrix()

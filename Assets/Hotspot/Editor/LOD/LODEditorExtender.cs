@@ -59,7 +59,7 @@ namespace Hotspot.Editor
         private void Test(LODGroup lodGroup)
         {
             Camera mainCamera = Camera.main;
-            Utils.CameraInfo cameraInfo = mainCamera.gameObject.GetOrAddComponent<Utils.CameraInfo>();
+            Utils.CameraInfo cameraInfo = new Utils.CameraInfo();
             Vector3 pos = lodGroup.transform.position;
             cameraInfo.SetCameraInfo(mainCamera);
             
