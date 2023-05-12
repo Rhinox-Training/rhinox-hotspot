@@ -16,8 +16,8 @@ namespace Hotspot.Editor
         private const float _normalButtonHeight = 30f;
         private const float _RemoveAllButtonHeight = 20f;
 
-        public List<Material> _allowedMaterials = new List<Material>();
-        public List<string> _allowedMeshNameKeywords = new List<string>();
+        [SerializeReference]
+        public List<IRendererFilter> _rendererFilters = new List<IRendererFilter>();
 
         private Dictionary<GameObject, OcclusionPortal> _occlusionPortalDictionary = new Dictionary<GameObject, OcclusionPortal>();
         private Vector2 _scrollPos;
@@ -25,8 +25,8 @@ namespace Hotspot.Editor
         private Vector3 _boundsMargin = new Vector3(0.05f, 0.05f, 0.05f);
 
         private SerializedObject _serObj;
-        private SerializedProperty _serMatListProp;
-        private SerializedProperty _serKeyWordListProp;
+        private SerializedProperty _serFilterListProp;
+        private ListDrawable _rendererFiltersDrawer;
 
         [MenuItem("Tools/HotSpot/Occlusion Portal Editor", false, 50)]
 
@@ -41,9 +41,8 @@ namespace Hotspot.Editor
             base.Initialize();
 
             _serObj = new SerializedObject(this);
-            _serMatListProp = _serObj.FindProperty(nameof(_allowedMaterials));
-            _serKeyWordListProp = _serObj.FindProperty(nameof(_allowedMeshNameKeywords));
-
+            _serFilterListProp = _serObj.FindProperty(nameof(_rendererFilters));
+            _rendererFiltersDrawer = new ListDrawable(_serFilterListProp);
 
             _occlusionPortalDictionary ??= new Dictionary<GameObject, OcclusionPortal>();
 
@@ -59,6 +58,9 @@ namespace Hotspot.Editor
 
         private void OnSceneOpened(Scene scene, OpenSceneMode mode) => _occlusionPortalDictionary?.Clear();
 
+        //Gets all meshrenderers in the scene.
+        //loops over them and check if they meet all the filter conditions
+        //if so, create/get the occlusion portal, set the dimension and add it to dictionary
         private void GeneratePortals()
         {
             _occlusionPortalDictionary.Clear();
@@ -67,39 +69,14 @@ namespace Hotspot.Editor
 
             foreach (var renderer in renderers)
             {
-                var filter = renderer.GetComponent<MeshFilter>();
-
-                //check if the renderer his meshfilter meets the requirements
-                if (renderer.sharedMaterials.ContainsAny(_allowedMaterials) &&
-                    filter.sharedMesh.name.ContainsOneOf(_allowedMeshNameKeywords.ToArray()))
-                //    if (renderer.sharedMaterials.ContainsAny(_allowedMaterials))
+                if (_rendererFilters.TrueForAll(x => x.IsValid(renderer)))
                 {
-                    //    if (filter.sharedMesh.name.ContainsOneOf(_allowedMeshNameKeywords.ToArray()))
-                    //    {
                     var portal = renderer.gameObject.GetOrAddComponent<OcclusionPortal>();
                     var localMargin = renderer.transform.InverseTransformVector(_boundsMargin);
                     portal.UpdateBounds(renderer.localBounds.AddMarginToExtends(localMargin.Abs()));
 
                     _occlusionPortalDictionary.Add(renderer.gameObject, portal);
-                    //}
                 }
-
-
-                //foreach (var mat in renderer.sharedMaterials)
-                //{
-                //    if (mat == null)
-                //        return;
-
-                //    if (mat.IsKeywordEnabled("_SURFACE_TYPE_TRANSPARENT"))
-                //    {
-                //        var portal = renderer.gameObject.GetOrAddComponent<OcclusionPortal>();
-                //        var localMargin = renderer.transform.InverseTransformVector(_boundsMargin);
-                //        portal.UpdateBounds(renderer.localBounds.AddMarginToExtends(localMargin.Abs()));
-
-                //        _occlusionPortalDictionary.Add(renderer.gameObject, portal);
-                //        break;
-                //    }
-                //}
             }
         }
 
@@ -140,11 +117,14 @@ namespace Hotspot.Editor
 
             {
                 EditorGUILayout.Space(7f);
-                EditorGUILayout.PropertyField(_serMatListProp);
-                EditorGUILayout.PropertyField(_serKeyWordListProp);
+
+                if (_rendererFiltersDrawer!=null)
+                {
+                    _rendererFiltersDrawer.Draw(GUIContent.none);
+                }
                 EditorGUILayout.Space(7f);
-                if (_serObj.hasModifiedProperties)
-                    _serObj.ApplyModifiedProperties();
+                //if (_serObj.hasModifiedProperties)
+                //    _serObj.ApplyModifiedProperties();
             }
 
 
@@ -172,6 +152,8 @@ namespace Hotspot.Editor
                 DestroyImmediate(portal);
         }
 
+        //makes a list that shows all the objects who have an occlusion portal on them.
+        //Also give them a button, so you can ping them in the hierachy and focus them in the scene view.
         private void ShowExistingOcclusionPortals()
         {
             float _width = GUI.skin.label.CalcSize(new GUIContent("#9999:")).x;
@@ -204,6 +186,9 @@ namespace Hotspot.Editor
             }
         }
 
+        //logice to show the bottom buttons (prev, discard, next)
+        //the prev and next are just decrement and increment with bound checks.
+        //the discard removes the occlusion portal component and removes it from the dictionary (with bounds check)
         private void HandleFooterButtons()
         {
             using (new eUtility.DisabledGroup(_occlusionPortalDictionary.Count == 0))
@@ -242,14 +227,14 @@ namespace Hotspot.Editor
                 }
             }
         }
-
+        
+        //simple function to set the gameobject as selected
+        //ping the object
+        //and focus the scene editor camera to the object.
         private void SelectItemInScene(KeyValuePair<GameObject, OcclusionPortal> item)
         {
             Selection.activeObject = item.Value;
             EditorGUIUtility.PingObject(item.Key);
-            //var rendererBound = item.Value.GetComponent<Renderer>().bounds;
-            //rendererBound.center += item.Key.transform.position;
-            //SceneView.lastActiveSceneView.Frame(rendererBound, false);
             SceneView.lastActiveSceneView.Frame(item.Value.GetComponent<Renderer>().bounds, false);
         }
     }

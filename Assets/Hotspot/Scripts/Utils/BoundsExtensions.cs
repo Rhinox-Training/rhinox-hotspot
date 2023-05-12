@@ -37,4 +37,18 @@ public static class BoundsExtensions
     {
         return bounds.AddMarginToExtends(new Vector3(margin, margin, margin));
     }
+
+    public static bool IsSizeBiggerThan(this Bounds bounds, Vector3 size)
+    {
+        return bounds.size.x > size.x &&
+               bounds.size.y > size.y &&
+               bounds.size.z > size.z;
+    }
+
+    public static bool IsSizeBiggerThan(this Bounds bounds, float size)
+    {
+        return bounds.size.x > size &&
+               bounds.size.y > size &&
+               bounds.size.z > size;
+    }
 }
