@@ -68,6 +68,8 @@ public class OcclusionAreaWindow : CustomEditorWindow
             if (nave.vertices.Length == 0)
                 continue;
 
+            //default init rect with element [0],
+            //ommits the problem of the origin point being included inside the bounds when doing encapsulate
             Rect recto = new Rect(nave.vertices[0].x, nave.vertices[0].z, 0f, 0f);
 
             for (int verteIdx = 1; verteIdx < nave.vertices.Length; ++verteIdx)
@@ -152,13 +154,6 @@ public class OcclusionAreaWindow : CustomEditorWindow
         EditorGUILayout.EndVertical();
     }
 
-    private void SelectItemInScene(OcclusionArea area)
-    {
-        Selection.activeObject = area.gameObject;
-        EditorGUIUtility.PingObject(area);
-        SceneView.lastActiveSceneView.Frame(new Bounds(area.center + area.gameObject.transform.position, Vector3.one), false);
-    }
-
     private void RemoveAllAreas()
     {
         _occlusionAreas.Clear();
@@ -168,6 +163,8 @@ public class OcclusionAreaWindow : CustomEditorWindow
             DestroyImmediate(area);
     }
 
+    //makes a list that shows all the objects who have an occlusion portal on them.
+    //Also give them a button, so you can ping them in the hierachy and focus them in the scene view.
     private void ShowExistingAreas()
     {
         float _width = GUI.skin.label.CalcSize(new GUIContent("#9999:")).x;
@@ -200,6 +197,10 @@ public class OcclusionAreaWindow : CustomEditorWindow
         }
     }
 
+
+    //logice to show the bottom buttons (prev, discard, next)
+    //the prev and next are just decrement and increment with bound checks.
+    //the discard removes the occlusion portal component and removes it from the dictionary (with bounds check)
     private void ProcessFooterButtons()
     {
         using (new eUtility.DisabledGroup(_occlusionAreas.Count == 0))
@@ -239,5 +240,15 @@ public class OcclusionAreaWindow : CustomEditorWindow
                 SelectItemInScene(_occlusionAreas.ElementAt(_selectedAreaIndex));
             }
         }
+    }
+
+    //simple function to set the gameobject as selected
+    //ping the object
+    //and focus the scene editor camera to the object.
+    private void SelectItemInScene(OcclusionArea area)
+    {
+        Selection.activeObject = area.gameObject;
+        EditorGUIUtility.PingObject(area);
+        SceneView.lastActiveSceneView.Frame(new Bounds(area.center + area.gameObject.transform.position, Vector3.one), false);
     }
 }
