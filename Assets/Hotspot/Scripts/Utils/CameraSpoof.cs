@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
-namespace Hotspot.Editor.Utils
+namespace Hotspot.Utils
 {
-    public class CameraInfo
+    public class CameraSpoof
     {
         private float _aspectRatio;
         private float _nearClipPlane;
@@ -18,6 +18,38 @@ namespace Hotspot.Editor.Utils
         private static readonly Vector3 _forward = new Vector3(0, 0, 1);
         private static readonly Vector3 _right = new Vector3(1, 0, 0);
 
+        public CameraSpoof()
+        {
+            _position = Vector3.zero;
+
+            _aspectRatio = 16/9f;
+            _nearClipPlane =3;
+            _farClipPlane = 100;
+
+            _fov = Mathf.Tan((Mathf.Deg2Rad * 90) / 2f);
+
+            RecalculateViewMatrix();
+            CalculateProjectionMatrix();
+        }
+        
+        /// <summary>
+        /// Initializes the camera info from an existing camera.
+        /// </summary>
+        /// <param name="cam">The existing camera.</param>
+        public CameraSpoof(Camera cam)
+        {
+            _position = cam.transform.position;
+
+            _aspectRatio = cam.aspect;
+            _nearClipPlane = cam.nearClipPlane;
+            _farClipPlane = cam.farClipPlane;
+
+            _fov = Mathf.Tan((Mathf.Deg2Rad * cam.fieldOfView) / 2f);
+
+            RecalculateViewMatrix();
+            CalculateProjectionMatrix();
+        }
+        
         /// <summary>
         /// Copies the camera info from an existing camera.
         /// </summary>
@@ -81,7 +113,7 @@ namespace Hotspot.Editor.Utils
                 new Vector4(right.x, right.y, right.z, 0),
                 new Vector4(up.x, up.y, up.z, 0),
                 new Vector4(back.x, -back.y, back.z, 0),
-                new Vector4(position.x, position.y, position.z, 1));
+                new Vector4(-position.x, -position.y, position.z, 1));
         }
 
         private void CalculateProjectionMatrix()
@@ -119,7 +151,7 @@ namespace Hotspot.Editor.Utils
 
             // Apply screen transform
             float screenX = normalizedDevicePosition.x * res.width;
-            float screenY = (1 - normalizedDevicePosition.y) * res.height;
+            float screenY = normalizedDevicePosition.y * res.height;
             return new Vector3(screenX, screenY, normalizedDevicePosition.z);
         }
 
