@@ -56,42 +56,70 @@ namespace Hotspot.Editor
             }
         }
 
-        private void Test(LODGroup lodGroup)
+        private void Test(Component lodGroup)
         {
             Camera mainCamera = Camera.main;
             Utils.CameraInfo cameraInfo = new Utils.CameraInfo();
             Vector3 pos = lodGroup.transform.position;
             cameraInfo.SetCameraInfo(mainCamera);
+
+            //------------------------------------------------------------------------------------------------------------
+            // COMPARE THE MATRICES
+            //------------------------------------------------------------------------------------------------------------
+            var ownProjectionMatrix = cameraInfo.GetProjectionMatrix();
+            var unityProjectionMatrix = mainCamera.projectionMatrix;
+            if (!AreMatricesEqual(ownProjectionMatrix, unityProjectionMatrix))
+            {
+                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], Projection matrices are not equal!");
+                return;
+            }
+
+            var ownViewMatrix = cameraInfo.GetViewMatrix();
+            var unityViewMatrix = mainCamera.worldToCameraMatrix;
+            if (!AreMatricesEqual(ownViewMatrix, unityViewMatrix))
+            {
+                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], View matrices are not equal!");
+                return;
+            }
+
+            //------------------------------------------------------------------------------------------------------------
+            // COMPARE THE FUNCTIONALITY
+            //------------------------------------------------------------------------------------------------------------
+            var unityViewPortPos = mainCamera.WorldToViewportPoint(pos);
+            var ownViewPortPos = cameraInfo.WorldToViewportPoint(pos);
+            if (!unityViewPortPos.Equals(ownViewPortPos))
+            {
+                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], Viewport positions are not equal!");
+                PLog.Info<HotspotLogger>($"Unity Viewport Pos: {unityViewPortPos}");
+                PLog.Info<HotspotLogger>($"Camera Info  Viewport Pos: {ownViewPortPos}");
+                return;
+            }
             
-            var temp = mainCamera.worldToCameraMatrix;
-            var temp2 = cameraInfo.GetViewMatrix();
-            CompareMatrices(temp, temp2);
-            
-            var temp3 = mainCamera.projectionMatrix;
-            var temp4 = cameraInfo.GetProjectionMatrix();
-            CompareMatrices(temp3, temp4);
+            var unityScreenPos = mainCamera.WorldToScreenPoint(pos);   
+            var ownScreenPos = cameraInfo.WorldToScreenPoint(pos);
+            if (!unityScreenPos.Equals(ownScreenPos))
+            {
+                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], Screen positions are not equal!");
+                PLog.Info<HotspotLogger>($"Unity Screen Pos: {unityScreenPos}");
+                PLog.Info<HotspotLogger>($"Camera Info  Screen Pos: {ownScreenPos}");
+                return;
+            }
         }
 
-        private static void CompareMatrices(Matrix4x4 m1, Matrix4x4 m2)
+        private bool AreMatricesEqual(Matrix4x4 matrix1, Matrix4x4 matrix2)
         {
-            var unityCol0 = m1.GetColumn(0);
-            var unityCol1 = m1.GetColumn(1);
-            var unityCol2 = m1.GetColumn(2);
-            var unityCol3 = m1.GetColumn(3);
+            for (int row = 0; row < 4; row++)
+            {
+                for (int col = 0; col < 4; col++)
+                {
+                    if (!Mathf.Approximately(matrix1[row, col], matrix2[row, col]))
+                    {
+                        return false;
+                    }
+                }
+            }
 
-            var camInfoCol0 = m2.GetColumn(0);
-            var camInfoCol1 = m2.GetColumn(1);
-            var camInfoCol2 = m2.GetColumn(2);
-            var camInfoCol3 = m2.GetColumn(3);
-
-            if (!unityCol0.Equals(camInfoCol0))
-                Debug.LogWarning("First Column not equal");
-            if (!unityCol1.Equals(camInfoCol1))
-                Debug.LogWarning("Second Column not equal");
-            if (!unityCol2.Equals(camInfoCol2))
-                Debug.LogWarning("Third Column not equal");
-            if (!unityCol3.Equals(camInfoCol3))
-                Debug.LogWarning("Fourth Column not equal");
+            return true;
         }
 
         private void RunTest(LODGroup lodGroup)
@@ -147,7 +175,6 @@ namespace Hotspot.Editor
             FileInfo info = new FileInfo("DensityTest.csv");
             FileHelper.CreateDirectoryIfNotExists(info.DirectoryName);
             File.WriteAllText("DensityTest.csv", csvFileStr);
-
         }
 
         private void OptimizeLODs(LODGroup lodGroup)
@@ -159,25 +186,26 @@ namespace Hotspot.Editor
         private void GetVertexDensity(LODGroup lodGroup)
         {
             Camera mainCamera;
-            if (Application.isPlaying)
-            {
-                if (CameraInfo.Instance == null)
-                {
-                    PLog.Error<HotspotLogger>(
-                        "[MaterialRenderingAnalysis,TakeMaterialSnapshot] CameraInfo.Instance is null");
-                    return;
-                }
-
-                mainCamera = CameraInfo.Instance.Main;
-
-                if (mainCamera == null)
-                {
-                    PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
-                    mainCamera = Camera.main;
-                }
-            }
-            else
-                mainCamera = SceneView.GetAllSceneCameras()[0];
+            // if (Application.isPlaying)
+            // {
+            //     if (CameraInfo.Instance == null)
+            //     {
+            //         PLog.Error<HotspotLogger>(
+            //             "[MaterialRenderingAnalysis,TakeMaterialSnapshot] CameraInfo.Instance is null");
+            //         return;
+            //     }
+            //
+            //     mainCamera = CameraInfo.Instance.Main;
+            //
+            //     if (mainCamera == null)
+            //     {
+            //         PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
+            //         mainCamera = Camera.main;
+            //     }
+            // }
+            // else
+            //     mainCamera = SceneView.GetAllSceneCameras()[0];
+            mainCamera = Camera.main;
 
             var lods = lodGroup.GetLODs();
             _densityValues = new Dictionary<LOD, float>();
