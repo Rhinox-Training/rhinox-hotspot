@@ -1,10 +1,9 @@
+using System;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
 using System.Linq;
+using Hotspot.Utils;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.Lightspeed;
-using Rhinox.Lightspeed.IO;
 using Rhinox.Magnus;
 using Rhinox.Perceptor;
 using UnityEditor;
@@ -16,8 +15,8 @@ namespace Hotspot.Editor
     public class LODEditorExtender : DefaultEditorExtender<LODGroup>
     {
         private float _maxDensityPerLOD = 0.01f;
-
-        private Dictionary<LOD, float> _densityValues;
+        private int _amountOfDensitySamples = 10;
+        private float _sampleOffset = 0.05f;
 
         public override void OnInspectorGUI()
         {
@@ -33,7 +32,14 @@ namespace Hotspot.Editor
             EditorGUILayout.LabelField("Max density per LOD: ");
             _maxDensityPerLOD = EditorGUILayout.FloatField(_maxDensityPerLOD);
             GUILayout.EndHorizontal();
-
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Amount of density samples: ");
+            _amountOfDensitySamples = EditorGUILayout.IntField(_amountOfDensitySamples);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("Camera offset per sample: ");
+            _sampleOffset = EditorGUILayout.FloatField(_sampleOffset);
+            GUILayout.EndHorizontal();
 
             GUILayout.Space(5f);
             CustomEditorGUI.Title("Execute");
@@ -43,23 +49,34 @@ namespace Hotspot.Editor
                 OptimizeLODs(lodGroup);
             }
 
-            if (GUILayout.Button("Get vertex densities"))
+            if (GUILayout.Button("Test vertex density"))
             {
-                LODGroup lod = (LODGroup)target;
-                GetVertexDensity(lod);
+                LODGroup lodGroup = (LODGroup)target;
+                TestVertexDensity(lodGroup);
             }
 
             if (GUILayout.Button("Test"))
             {
-                LODGroup lod = (LODGroup)target;
-                Test(lod);
+                Test((LODGroup)target);
             }
+        }
+
+        private void OptimizeLODs(LODGroup lodGroup)
+        {
+            var lods = lodGroup.GetLODs();
+            int currentLOD = 0;
+            if (!TryGetMainCamera(out var camera))
+            {
+                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,OptimizeLODs] Could not get main camera");
+                return;
+            }
+            
         }
 
         private void Test(Component lodGroup)
         {
             Camera mainCamera = Camera.main;
-            Utils.CameraInfo cameraInfo = new Utils.CameraInfo();
+            CameraSpoof cameraInfo = new CameraSpoof();
             Vector3 pos = lodGroup.transform.position;
             cameraInfo.SetCameraInfo(mainCamera);
 
@@ -87,23 +104,30 @@ namespace Hotspot.Editor
             //------------------------------------------------------------------------------------------------------------
             var unityViewPortPos = mainCamera.WorldToViewportPoint(pos);
             var ownViewPortPos = cameraInfo.WorldToViewportPoint(pos);
-            if (!unityViewPortPos.Equals(ownViewPortPos))
+            if (!AreVectorsEqual(unityViewPortPos, ownViewPortPos, 0.01f))
             {
                 PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], Viewport positions are not equal!");
                 PLog.Info<HotspotLogger>($"Unity Viewport Pos: {unityViewPortPos}");
                 PLog.Info<HotspotLogger>($"Camera Info  Viewport Pos: {ownViewPortPos}");
                 return;
             }
-            
-            var unityScreenPos = mainCamera.WorldToScreenPoint(pos);   
+
+            var unityScreenPos = mainCamera.WorldToScreenPoint(pos);
             var ownScreenPos = cameraInfo.WorldToScreenPoint(pos);
-            if (!unityScreenPos.Equals(ownScreenPos))
+            if (!AreVectorsEqual(unityScreenPos, ownScreenPos, 0.01f))
             {
                 PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], Screen positions are not equal!");
                 PLog.Info<HotspotLogger>($"Unity Screen Pos: {unityScreenPos}");
                 PLog.Info<HotspotLogger>($"Camera Info  Screen Pos: {ownScreenPos}");
                 return;
             }
+        }
+
+        public static bool AreVectorsEqual(Vector3 vector1, Vector3 vector2, float tolerance = 0.0001f)
+        {
+            return Mathf.Abs(vector1.x - vector2.x) <= tolerance &&
+                   Mathf.Abs(vector1.y - vector2.y) <= tolerance &&
+                   Mathf.Abs(vector1.z - vector2.z) <= tolerance;
         }
 
         private bool AreMatricesEqual(Matrix4x4 matrix1, Matrix4x4 matrix2)
@@ -122,106 +146,57 @@ namespace Hotspot.Editor
             return true;
         }
 
-        private void RunTest(LODGroup lodGroup)
+        private void TestVertexDensity(LODGroup lodGroup)
         {
-            Camera mainCamera = Camera.main;
-            if (mainCamera == null)
+            if (!TryGetMainCamera(out var mainCamera))
             {
-                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
+                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TestVertexDensity] Could not get main camera");
+                return;
             }
 
-            const int sampleSize = 15;
-            const float sampleDistanceOffset = 5f;
-
-            var transform = mainCamera.transform;
-            transform.LookAt(lodGroup.gameObject.transform);
-            List<float> distances = new List<float>();
-            List<List<float>> sampleEntries = new();
-            for (int sampleID = 0; sampleID < sampleSize; sampleID++)
-            {
-                distances.Add(Vector3.Distance(transform.position, lodGroup.gameObject.transform.position));
-                sampleEntries.Add(new List<float>());
-                foreach (LOD lod in lodGroup.GetLODs())
-                {
-                    float avgDensity = lod.renderers.Sum(renderer =>
-                        VertexDensityUtility.CalculateVertexDensity(renderer, mainCamera).Density);
-                    avgDensity /= lod.renderers.Length;
-                    sampleEntries[sampleID].Add(avgDensity);
-                }
-
-                transform.position -= transform.forward * sampleDistanceOffset;
-            }
-
-            var table = new DataTable();
-            table.Columns.Add("Distance");
-            for (int i = 0; i < lodGroup.GetLODs().Length; i++)
-            {
-                table.Columns.Add($"LOD {i}");
-            }
-
-            for (int i = 0; i < sampleSize; i++)
-            {
-                var row = table.NewRow();
-                row["Distance"] = distances[i];
-                for (int j = 0; j < lodGroup.GetLODs().Length; j++)
-                {
-                    row[$"LOD {j}"] = sampleEntries[i][j];
-                }
-
-                table.Rows.Add(row);
-            }
-
-            string csvFileStr = table.ToCsv();
-            FileInfo info = new FileInfo("DensityTest.csv");
-            FileHelper.CreateDirectoryIfNotExists(info.DirectoryName);
-            File.WriteAllText("DensityTest.csv", csvFileStr);
-        }
-
-        private void OptimizeLODs(LODGroup lodGroup)
-        {
-            if (_densityValues == null)
-                GetVertexDensity(lodGroup);
-        }
-
-        private void GetVertexDensity(LODGroup lodGroup)
-        {
-            Camera mainCamera;
-            // if (Application.isPlaying)
-            // {
-            //     if (CameraInfo.Instance == null)
-            //     {
-            //         PLog.Error<HotspotLogger>(
-            //             "[MaterialRenderingAnalysis,TakeMaterialSnapshot] CameraInfo.Instance is null");
-            //         return;
-            //     }
-            //
-            //     mainCamera = CameraInfo.Instance.Main;
-            //
-            //     if (mainCamera == null)
-            //     {
-            //         PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
-            //         mainCamera = Camera.main;
-            //     }
-            // }
-            // else
-            //     mainCamera = SceneView.GetAllSceneCameras()[0];
-            mainCamera = Camera.main;
-
+            CameraSpoof cameraInfo = new CameraSpoof();
+            cameraInfo.SetCameraInfo(mainCamera);
             var lods = lodGroup.GetLODs();
-            _densityValues = new Dictionary<LOD, float>();
 
             foreach (LOD lod in lods)
             {
-                float avgDensity = lod.renderers.Sum(renderer =>
+                float camDensity = lod.renderers.Sum(renderer =>
                     VertexDensityUtility.CalculateVertexDensity(renderer, mainCamera).Density);
-                avgDensity /= lod.renderers.Length;
-                _densityValues.Add(lod, avgDensity);
+                float spoofDensity = lod.renderers.Sum(renderer =>
+                    VertexDensityUtility.CalculateVertexDensity(renderer, cameraInfo).Density);
+                if (camDensity - spoofDensity > 0.01f)
+                {
+                    PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TestVertexDensity] Vertex density is not equal!");
+                    return;
+                }
+            }
+        }
+
+        private bool TryGetMainCamera(out Camera camera)
+        {
+            camera = null;
+
+            if (Application.isPlaying)
+            {
+                if (CameraInfo.Instance == null)
+                {
+                    PLog.Warn<HotspotLogger>(
+                        "[MaterialRenderingAnalysis,TakeMaterialSnapshot] CameraInfo.Instance is null");
+                    return false;
+                }
+
+                camera = CameraInfo.Instance.Main;
+            }
+            else
+                camera = Camera.main;
+
+            if (camera == null)
+            {
+                PLog.Warn<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
+                return false;
             }
 
-            foreach (var pair in _densityValues)
-            {
-                Debug.Log($"LOD: {pair.Key.ToString()}, Avg density: {pair.Value}");
-            }
+            return true;
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using Hotspot.Editor.Utils;
+using Hotspot.Utils;
+using UnityEngine;
 
 namespace Hotspot.Editor
 {
@@ -63,7 +65,7 @@ namespace Hotspot.Editor
     {
         public static bool TryCalculateVertexDensity(Renderer renderer, out VertexDensityInfo info)
         {
-            return TryCalculateVertexDensity(renderer, null, out info);
+            return TryCalculateVertexDensity(renderer, (Camera)null, out info);
         }
 
         public static bool TryCalculateVertexDensity(Renderer renderer, Camera camera, out VertexDensityInfo info)
@@ -82,10 +84,35 @@ namespace Hotspot.Editor
             info = vertexInfo;
             return true;
         }
+
+        private static bool TryCalculateVertexDensity(Renderer renderer, CameraSpoof cameraSpoof,
+            out VertexDensityInfo info)
+        {
+            if (renderer == null || !MeshInfo.TryCreate(renderer, out MeshInfo mi))
+            {
+                info = default(VertexDensityInfo);
+                return false;
+            }
+
+            var vertexInfo = new VertexDensityInfo()
+            {
+                VertexCount = EditorPlayModeMeshCache.GetVertexData(mi.Mesh).Length,
+                ScreenOccupation = mi.RendererBounds.GetScreenPixels(cameraSpoof)
+            };
+            info = vertexInfo;
+            return true;
+        }
         
         public static VertexDensityInfo CalculateVertexDensity(Renderer renderer, Camera camera = null)
         {
             if (TryCalculateVertexDensity(renderer, camera, out VertexDensityInfo info))
+                return info;
+            return default(VertexDensityInfo);
+        }
+
+        public static VertexDensityInfo CalculateVertexDensity(Renderer renderer, CameraSpoof cameraSpoof)
+        {
+            if (TryCalculateVertexDensity(renderer, cameraSpoof, out VertexDensityInfo info))
                 return info;
             return default(VertexDensityInfo);
         }
