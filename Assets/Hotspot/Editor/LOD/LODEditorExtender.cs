@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Hotspot.Utils;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.Lightspeed;
 using Rhinox.Magnus;
@@ -15,8 +14,10 @@ namespace Hotspot.Editor
     public class LODEditorExtender : DefaultEditorExtender<LODGroup>
     {
         private float _maxDensityPerLOD = 0.01f;
-        private int _amountOfDensitySamples = 10;
-        private float _sampleOffset = 0.05f;
+        private bool _forceCullingPercentage = false;
+        private int _cullingPercentage = 10;
+
+        LOD[] _previousLODs = null;
 
         public override void OnInspectorGUI()
         {
@@ -29,147 +30,125 @@ namespace Hotspot.Editor
             CustomEditorGUI.Title("Settings");
 
             GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Max density per LOD: ");
+            EditorGUILayout.LabelField("Max screen vertex density per LOD: ");
             _maxDensityPerLOD = EditorGUILayout.FloatField(_maxDensityPerLOD);
             GUILayout.EndHorizontal();
+
             GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Amount of density samples: ");
-            _amountOfDensitySamples = EditorGUILayout.IntField(_amountOfDensitySamples);
+            EditorGUILayout.LabelField("Force culling percentage: ");
+            _forceCullingPercentage = EditorGUILayout.Toggle(_forceCullingPercentage);
             GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Camera offset per sample: ");
-            _sampleOffset = EditorGUILayout.FloatField(_sampleOffset);
-            GUILayout.EndHorizontal();
+
+            if (_forceCullingPercentage)
+            {
+                GUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField("Culling percentage: ");
+                _cullingPercentage = EditorGUILayout.IntField(_cullingPercentage);
+                _cullingPercentage = Mathf.Clamp(_cullingPercentage, 0, 100);
+                GUILayout.EndHorizontal();
+            }
+
 
             GUILayout.Space(5f);
             CustomEditorGUI.Title("Execute");
             if (GUILayout.Button("Optimize LODs"))
             {
                 LODGroup lodGroup = (LODGroup)target;
-                OptimizeLODs(lodGroup);
+                OptimizeLoDs(lodGroup);
             }
 
-            if (GUILayout.Button("Test vertex density"))
+            if (_previousLODs != null)
             {
-                LODGroup lodGroup = (LODGroup)target;
-                TestVertexDensity(lodGroup);
-            }
-
-            if (GUILayout.Button("Test"))
-            {
-                Test((LODGroup)target);
+                if (GUILayout.Button("Revert previous LODS"))
+                {
+                    LODGroup lodGroup = (LODGroup)target;
+                    RevertLODS(lodGroup);
+                }
             }
         }
 
-        private void OptimizeLODs(LODGroup lodGroup)
+        private void RevertLODS(LODGroup lodGroup)
+        {
+            lodGroup.SetLODs(_previousLODs);
+            _previousLODs = null;
+        }
+
+        private void OptimizeLoDs(LODGroup lodGroup)
         {
             var lods = lodGroup.GetLODs();
-            int currentLOD = 0;
             if (!TryGetMainCamera(out var camera))
             {
                 PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,OptimizeLODs] Could not get main camera");
                 return;
             }
-            
-        }
 
-        private void Test(Component lodGroup)
-        {
-            Camera mainCamera = Camera.main;
-            CameraSpoof cameraInfo = new CameraSpoof();
-            Vector3 pos = lodGroup.transform.position;
-            cameraInfo.SetCameraInfo(mainCamera);
+            var newLods = new List<LOD>();
 
-            //------------------------------------------------------------------------------------------------------------
-            // COMPARE THE MATRICES
-            //------------------------------------------------------------------------------------------------------------
-            var ownProjectionMatrix = cameraInfo.GetProjectionMatrix();
-            var unityProjectionMatrix = mainCamera.projectionMatrix;
-            if (!AreMatricesEqual(ownProjectionMatrix, unityProjectionMatrix))
+            for (int i = 0; i < lods.Length; i++)
             {
-                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], Projection matrices are not equal!");
-                return;
-            }
+                var meshInfoList = new List<MeshInfo>();
 
-            var ownViewMatrix = cameraInfo.GetViewMatrix();
-            var unityViewMatrix = mainCamera.worldToCameraMatrix;
-            if (!AreMatricesEqual(ownViewMatrix, unityViewMatrix))
-            {
-                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], View matrices are not equal!");
-                return;
-            }
-
-            //------------------------------------------------------------------------------------------------------------
-            // COMPARE THE FUNCTIONALITY
-            //------------------------------------------------------------------------------------------------------------
-            var unityViewPortPos = mainCamera.WorldToViewportPoint(pos);
-            var ownViewPortPos = cameraInfo.WorldToViewportPoint(pos);
-            if (!AreVectorsEqual(unityViewPortPos, ownViewPortPos, 0.01f))
-            {
-                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], Viewport positions are not equal!");
-                PLog.Info<HotspotLogger>($"Unity Viewport Pos: {unityViewPortPos}");
-                PLog.Info<HotspotLogger>($"Camera Info  Viewport Pos: {ownViewPortPos}");
-                return;
-            }
-
-            var unityScreenPos = mainCamera.WorldToScreenPoint(pos);
-            var ownScreenPos = cameraInfo.WorldToScreenPoint(pos);
-            if (!AreVectorsEqual(unityScreenPos, ownScreenPos, 0.01f))
-            {
-                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis:Test], Screen positions are not equal!");
-                PLog.Info<HotspotLogger>($"Unity Screen Pos: {unityScreenPos}");
-                PLog.Info<HotspotLogger>($"Camera Info  Screen Pos: {ownScreenPos}");
-                return;
-            }
-        }
-
-        public static bool AreVectorsEqual(Vector3 vector1, Vector3 vector2, float tolerance = 0.0001f)
-        {
-            return Mathf.Abs(vector1.x - vector2.x) <= tolerance &&
-                   Mathf.Abs(vector1.y - vector2.y) <= tolerance &&
-                   Mathf.Abs(vector1.z - vector2.z) <= tolerance;
-        }
-
-        private bool AreMatricesEqual(Matrix4x4 matrix1, Matrix4x4 matrix2)
-        {
-            for (int row = 0; row < 4; row++)
-            {
-                for (int col = 0; col < 4; col++)
+                foreach (Renderer lodRenderer in lods[i].renderers)
                 {
-                    if (!Mathf.Approximately(matrix1[row, col], matrix2[row, col]))
+                    if (!MeshInfo.TryCreate(lodRenderer, out MeshInfo mi))
                     {
-                        return false;
+                        continue;
                     }
+
+                    meshInfoList.Add(mi);
                 }
+
+                float maxHeightPercentage =
+                    GetHeightPercentageAtTargetDensity(meshInfoList.ToArray(), camera, _maxDensityPerLOD);
+                if (_forceCullingPercentage && i == lods.Length - 1)
+                    newLods.Add(new LOD(_cullingPercentage / 100f, lods[i].renderers));
+                else
+                    newLods.Add(new LOD(maxHeightPercentage, lods[i].renderers));
             }
 
-            return true;
+            _previousLODs = lods;
+            ProcessLods(newLods);
+            lodGroup.SetLODs(newLods.ToArray());
         }
 
-        private void TestVertexDensity(LODGroup lodGroup)
+        private void ProcessLods(List<LOD> newLods)
         {
-            if (!TryGetMainCamera(out var mainCamera))
+            var invalidLods = newLods
+                .Where(x => x.screenRelativeTransitionHeight >= 1f).ToList();
+
+            for (int i = 0; i < newLods.Count; i++)
             {
-                PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TestVertexDensity] Could not get main camera");
-                return;
+                if (!invalidLods.Contains(newLods[i]))
+                    continue;
+                PLog.Warn<HotspotLogger>(
+                    $"[MaterialRenderingAnalysis,ProcessLods] Invalid LOD {i} transition height {newLods[i].screenRelativeTransitionHeight}. Consider removing.");
+                float previousTransitionHeight = GetTransitionHeightPredecessor(newLods, i);
+                newLods[i] = new LOD(previousTransitionHeight, newLods[i].renderers);
             }
 
-            CameraSpoof cameraInfo = new CameraSpoof();
-            cameraInfo.SetCameraInfo(mainCamera);
-            var lods = lodGroup.GetLODs();
+            newLods.RemoveAll(x => x.screenRelativeTransitionHeight >= 1f);
+        }
 
-            foreach (LOD lod in lods)
-            {
-                float camDensity = lod.renderers.Sum(renderer =>
-                    VertexDensityUtility.CalculateVertexDensity(renderer, mainCamera).Density);
-                float spoofDensity = lod.renderers.Sum(renderer =>
-                    VertexDensityUtility.CalculateVertexDensity(renderer, cameraInfo).Density);
-                if (camDensity - spoofDensity > 0.01f)
-                {
-                    PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,TestVertexDensity] Vertex density is not equal!");
-                    return;
-                }
-            }
+        private float GetTransitionHeightPredecessor(List<LOD> newLods, int i)
+        {
+            return i == 0 ? 1f : newLods[i - 1].screenRelativeTransitionHeight;
+        }
+
+        private float GetHeightPercentageAtTargetDensity(MeshInfo[] meshInfoList, Camera camera, float targetDensity)
+        {
+            // Sum of the vertex counts
+            int amountOfVertices = meshInfoList.Select(mi => mi.Mesh.vertexCount).Sum();
+
+            // Calculate the screen space radius that produces the target density
+            float targetScreenRadius = amountOfVertices / targetDensity;
+            targetScreenRadius = (float)Math.Sqrt(targetScreenRadius / Mathf.PI);
+
+            // Get the total height 
+            float totalTargetHeight = targetScreenRadius * 2f;
+
+            float heightPercentage = totalTargetHeight / camera.pixelRect.height;
+
+            return heightPercentage;
         }
 
         private bool TryGetMainCamera(out Camera camera)
@@ -196,6 +175,7 @@ namespace Hotspot.Editor
                 return false;
             }
 
+            camera = SceneView.GetAllSceneCameras()[0];
             return true;
         }
     }
