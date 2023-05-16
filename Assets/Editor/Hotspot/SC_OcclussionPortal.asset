@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ac0c0afbf8a4dda80a1ab0c16a13171, type: 3}
+  m_Name: SC_OcclussionPortal
+  m_EditorClassIdentifier: 
+  Scene:
+    sceneGuid: 36ad73dede10da7409d9d25f0870a107
+    scenePath: Assets/Tests/Scenes/SC_OcclussionPortal.unity
+  PoseApplierType:
+    _assemblyName: 
+    _assemblyQualifiedName: 
+    _name: 
+  PoseApplier:
+    rid: -2
+  Entries: []
+  Statistics:
+  - rid: 2224544395725373440
+  - rid: 2224544395725373441
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 2224544395725373440
+      type: {class: VertexDensityStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        _mode: 0
+        _MaxVerticesPerCube: 500
+        _minOctreeCubeSize: 1
+        _vertsPerPixelThreshold: 4
+    - rid: 2224544395725373441
+      type: {class: VertexDensityStatistic, ns: Hotspot.Editor, asm: com.rhinox.open.hotspot.editor}
+      data:
+        _mode: 1
+        _MaxVerticesPerCube: 500
+        _minOctreeCubeSize: 1
+        _vertsPerPixelThreshold: 4
