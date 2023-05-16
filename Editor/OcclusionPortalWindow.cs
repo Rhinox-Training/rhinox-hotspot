@@ -63,6 +63,10 @@ namespace Hotspot.Editor
         //if so, create/get the occlusion portal, set the dimension and add it to dictionary
         private void GeneratePortals()
         {
+            //skip if no filters
+            if (_rendererFilters.Count == 0)
+                return;
+
             _occlusionPortalDictionary.Clear();
 
             var renderers = UnityEngine.Object.FindObjectsOfType<MeshRenderer>();
@@ -118,7 +122,7 @@ namespace Hotspot.Editor
             {
                 EditorGUILayout.Space(7f);
 
-                if (_rendererFiltersDrawer!=null)
+                if (_rendererFiltersDrawer != null)
                 {
                     _rendererFiltersDrawer.Draw(GUIContent.none);
                 }
@@ -225,7 +229,7 @@ namespace Hotspot.Editor
                 }
             }
         }
-        
+
         //simple function to set the gameobject as selected
         //ping the object
         //and focus the scene editor camera to the object.
