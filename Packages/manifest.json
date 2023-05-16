@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.pixelwizards.navmeshcomponents": "0.1.0",
     "com.rhinox.open.guiutils": "2.10.0",
     "com.rhinox.open.lightspeed": "1.5.11",
     "com.rhinox.open.magnus": "0.5.7",
@@ -53,7 +54,8 @@
       "scopes": [
         "com.openupm",
         "nl.elraccoone",
-        "com.rhinox.open"
+        "com.rhinox.open",
+        "com.pixelwizards.navmeshcomponents"
       ]
     }
   ]

@@ -33,6 +33,7 @@ MonoBehaviour:
     - com.openupm
     - nl.elraccoone
     - com.rhinox.open
+    - com.pixelwizards.navmeshcomponents
     m_IsDefault: 0
     m_Capabilities: 0
     m_ConfigSource: 4

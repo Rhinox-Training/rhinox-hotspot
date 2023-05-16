@@ -58,32 +58,38 @@ public class OcclusionAreaWindow : CustomEditorWindow
         if (_rootObj == null)
             _rootObj = new GameObject(_rootObjName);
 
-        int cnt = 0;
+        NavMeshBoundsCalculator tempCalc = new NavMeshBoundsCalculator();
+
+        int navMeshIdx = 0;
         for (int idx = 0; idx < _navMeshAreaCount; idx++)
         {
             if (((_navMeshAreasMask >> idx) & 1) == 0)
                 continue;
 
-            var nave = NavMeshHelper.CalculateTriangulation(1 << idx);
-            if (nave.vertices.Length == 0)
+            //var nave = NavMeshHelper.CalculateTriangulation(1 << idx);
+            var tempMesh = NavMeshHelper.GenerateNavMesh($"Mesh{idx}", 1f, false, 1 << idx);
+            if (tempMesh.vertexCount == 0)
                 continue;
 
-            //default init rect with element [0],
-            //ommits the problem of the origin point being included inside the bounds when doing encapsulate
-            Rect recto = new Rect(nave.vertices[0].x, nave.vertices[0].z, 0f, 0f);
+            NavMeshBoundsCalculator.GetNavmeshRects(out List<List<Bounds>> listOfBoundsList, 1 << idx, tempMesh, _margin);
 
-            for (int verteIdx = 1; verteIdx < nave.vertices.Length; ++verteIdx)
+            int meshIdx = 0;
+            foreach (var boundsList in listOfBoundsList)
             {
-                recto = recto.Encapsulate(new Vector2(nave.vertices[verteIdx].x, nave.vertices[verteIdx].z));
+                int boundIdx = 0;
+                foreach (var bound in boundsList)
+                {
+                    string autoGenName = $"_Auto_OcclusionArea_{navMeshIdx}_Mesh{meshIdx}_Bound{boundIdx}";
+                    CreateOrAddNewOcclusionArea(bound, autoGenName);
+                    ++boundIdx; ;
+                }
+                ++meshIdx;
             }
-
-            string autoGenName = $"_Auto_OcclusionArea_{cnt}";
-            CreateOrAddNewOcclusionArea(nave, recto, autoGenName);
-            ++cnt;
+            ++navMeshIdx;
         }
     }
 
-    private void CreateOrAddNewOcclusionArea(NavMeshTriangulation nave, Rect recto, string autoGenName)
+    private void CreateOrAddNewOcclusionArea(Bounds bounds, string autoGenName)
     {
         GameObject obj = GameObject.Find(autoGenName);
         obj = obj != null ? obj : new GameObject(autoGenName);
@@ -91,8 +97,12 @@ public class OcclusionAreaWindow : CustomEditorWindow
         var occlusionAreaCmpt = obj.GetOrAddComponent<OcclusionArea>();
         obj.transform.parent = _rootObj.transform;
 
-        occlusionAreaCmpt.center = new Vector3(recto.x + (recto.width) / 2, nave.vertices[0].y + (_height / 2), recto.y + (recto.height) / 2);
-        occlusionAreaCmpt.size = new Vector3(recto.width + (_margin * 2), _height, recto.height + (_margin * 2));
+        bounds.center = bounds.center.With(null, bounds.center.y + _height / 2f, null);
+        bounds.size = bounds.size.With(null, _height, null);
+        occlusionAreaCmpt.center = bounds.center;
+        occlusionAreaCmpt.size = bounds.size;
+        //occlusionAreaCmpt.center = new Vector3(recto.x + (recto.width) / 2, nave.vertices[0].y + (_height / 2), recto.y + (recto.height) / 2);
+        //occlusionAreaCmpt.size = new Vector3(recto.width + (_margin * 2), _height, recto.height + (_margin * 2));
 
         _occlusionAreas.Add(occlusionAreaCmpt);
     }

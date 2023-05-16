@@ -28,8 +28,8 @@ namespace Hotspot.Editor
         private SerializedProperty _serFilterListProp;
         private ListDrawable _rendererFiltersDrawer;
 
-        [MenuItem("Tools/HotSpot/Occlusion Portal Editor", false, 50)]
 
+        [MenuItem("Tools/HotSpot/Occlusion Portal Editor", false, 50)]
         public static void ShowWindow()
         {
             var win = GetWindow(typeof(OcclusionPortalWindow));
@@ -123,8 +123,6 @@ namespace Hotspot.Editor
                     _rendererFiltersDrawer.Draw(GUIContent.none);
                 }
                 EditorGUILayout.Space(7f);
-                //if (_serObj.hasModifiedProperties)
-                //    _serObj.ApplyModifiedProperties();
             }
 
 
