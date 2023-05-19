@@ -1,4 +1,4 @@
-﻿using Hotspot.Utils;
+﻿using Rhinox.Lightspeed;
 using Rhinox.Magnus;
 using UnityEngine;
 using UnityEngine.SceneManagement;

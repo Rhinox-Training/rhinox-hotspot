@@ -7,7 +7,7 @@ using Rhinox.Lightspeed;
 using Rhinox.GUIUtils.Editor;
 #endif
 
-namespace Rhinox.Hotspot.Editor
+namespace Hotspot.Editor
 {
     //TODO: add on scene changing to empty the visual
     public class VertexDensityVisualizer : CustomSceneOverlayWindow<VertexDensityVisualizer>

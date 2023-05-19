@@ -7,7 +7,7 @@ using Rhinox.GUIUtils.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hotspot.Utils
+namespace Hotspot
 {
     public class OcclusionPortalBakeData : MonoBehaviour, ISerializationCallbackReceiver
     {

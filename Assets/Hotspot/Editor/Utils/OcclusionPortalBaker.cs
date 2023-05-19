@@ -1,8 +1,8 @@
-﻿using Hotspot.Utils;
+﻿using Rhinox.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Hotspot.Editor.Utils
+namespace Hotspot.Editor
 {
     public static class OcclusionPortalBaker
     {

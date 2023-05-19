@@ -10,7 +10,6 @@ using Rhinox.Perceptor;
 using Rhinox.Utilities;
 using Sirenix.OdinInspector;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -86,71 +85,90 @@ namespace Hotspot.Editor
             }
 
             GUILayout.Space(EditorGUIUtility.singleLineHeight);
-            using (new eUtility.DisabledGroup(_benchmarkAsset == null || !Application.isPlaying))
+            if (Application.isPlaying)
             {
-                if (_benchmark == null || !_benchmark.IsRunning)
+                using (new eUtility.DisabledGroup(_benchmarkAsset == null || !EditorApplicationExt.IsPlaying(PlayModeEnterMode.VertexCached)))
                 {
-                    if (GUILayout.Button("Run Benchmark"))
+                    if (!EditorApplicationExt.IsPlaying(PlayModeEnterMode.VertexCached))
                     {
-                        _resultsCache = null;
-                        _benchmark = new Benchmark(_benchmarkAsset);
-                        _benchmark.BenchmarkTick += OnBenchmarkTick;
-                        _benchmark.Finished += OnFinished;
-                        _benchmark.Run();
+                        EditorGUILayout.HelpBox("Did not start play mode from BenchmarkEditorWindow, please use the editor", MessageType.Warning);
                     }
-                }
-                else
-                {
-                    GUILayout.BeginHorizontal();
-                    if (GUILayout.Button(_benchmark.IsPaused ? "Unpause Benchmark" : "Pause Benchmark"))
-                        _benchmark.TogglePause();
-                    if (GUILayout.Button("Cancel Benchmark"))
-                        _benchmark.Cancel();
-                    GUILayout.EndHorizontal();
-                }
-
-                DrawBenchmarkProgress();
-
-                GUILayout.Space(16);
-                
-                if (_benchmark != null && _benchmark.IsRunning)
-                {
-                    CustomEditorGUI.Title("Statistics");
-                    _scrollPositionStats = GUILayout.BeginScrollView(_scrollPositionStats, false, true, GUILayout.MinHeight(100));
-                    _benchmark.DrawLayout();
-                    GUILayout.EndScrollView();
-                }
-                else
-                {
-                    CustomEditorGUI.Title("Results");
-                    if (_resultsCache != null)
+                    if (_benchmark == null || !_benchmark.IsRunning)
                     {
-                        using (var table = new eUtility.SimpleTableView(new [] {"Entry", "Average", "StdDev"}))
+                        if (GUILayout.Button("Run Benchmark"))
                         {
-                            foreach (var result in _resultsCache)
+                            _resultsCache = null;
+                            _benchmark = new Benchmark(_benchmarkAsset);
+                            _benchmark.BenchmarkTick += OnBenchmarkTick;
+                            _benchmark.Finished += OnFinished;
+                            _benchmark.Run();
+                        }
+                    }
+                    else
+                    {
+                        GUILayout.BeginHorizontal();
+                        if (GUILayout.Button(_benchmark.IsPaused ? "Unpause Benchmark" : "Pause Benchmark"))
+                            _benchmark.TogglePause();
+                        if (GUILayout.Button("Cancel Benchmark"))
+                            _benchmark.Cancel();
+                        GUILayout.EndHorizontal();
+                    }
+
+                    DrawBenchmarkProgress();
+
+                    GUILayout.Space(16);
+
+                    if (_benchmark != null && _benchmark.IsRunning)
+                    {
+                        CustomEditorGUI.Title("Statistics");
+                        _scrollPositionStats = GUILayout.BeginScrollView(_scrollPositionStats, false, true,
+                            GUILayout.MinHeight(100));
+                        _benchmark.DrawLayout();
+                        GUILayout.EndScrollView();
+                    }
+                    else
+                    {
+                        CustomEditorGUI.Title("Results");
+                        if (_resultsCache != null)
+                        {
+                            using (var table = new eUtility.SimpleTableView(new[] {"Entry", "Average", "StdDev"}))
                             {
-                                if (result == null)
-                                    continue;
-                                table.DrawRow(result.Name, result.Average, result.StdDev);
+                                foreach (var result in _resultsCache)
+                                {
+                                    if (result == null)
+                                        continue;
+                                    table.DrawRow(result.Name, result.Average, result.StdDev);
+                                }
                             }
                         }
                     }
                 }
+
+                GUILayout.Space(4.0f);
+                using (new eUtility.DisabledGroup(_benchmark == null ||
+                                                  Application.isPlaying && !EditorApplicationExt.IsPlaying(PlayModeEnterMode.VertexCached)))
+                {
+                    CustomEditorGUI.Title("Exports");
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Export File:");
+                    _exportPath = GUILayout.TextField(_exportPath);
+                    GUILayout.EndHorizontal();
+                    _autoExport = GUILayout.Toggle(_autoExport, "Automatic Exports");
+                    if (GUILayout.Button("Export"))
+                    {
+                        BenchmarkExporter.Export(_benchmark, _exportPath);
+                    }
+                }
+
             }
-            
-            GUILayout.Space(4.0f);
-            
-            CustomEditorGUI.Title("Exports");
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Export File:");
-            _exportPath = GUILayout.TextField(_exportPath);
-            GUILayout.EndHorizontal();
-            _autoExport = GUILayout.Toggle(_autoExport, "Automatic Exports");
-            if (GUILayout.Button("Export"))
+            else
             {
-                BenchmarkExporter.Export(_benchmark, _exportPath);
+                EditorGUILayout.HelpBox("Click here to start a benchmarking enabled session of Unity play mode.", MessageType.Info);
+                if (GUILayout.Button("Start Benchmarking..."))
+                {
+                    EditorApplicationExt.EnterPlayMode(PlayModeEnterMode.VertexCached);
+                }
             }
-            
             GUILayout.FlexibleSpace();
             EditorGUILayout.EndScrollView();
         }

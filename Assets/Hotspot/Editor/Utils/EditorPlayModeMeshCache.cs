@@ -15,11 +15,14 @@ namespace Hotspot.Editor
 
         static EditorPlayModeMeshCache()
         {
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+            EditorApplicationExt.PlayModeStateChanged += OnPlayModeStateChanged;
         }
 
-        private static void OnPlayModeStateChanged(PlayModeStateChange obj)
+        private static void OnPlayModeStateChanged(PlayModeStateChange obj, PlayModeEnterMode mode)
         {
+            if (mode == PlayModeEnterMode.Normal)
+                return;
+            
             if (obj == PlayModeStateChange.EnteredPlayMode)
             {
                 if (_vertexCache == null)
@@ -57,13 +60,7 @@ namespace Hotspot.Editor
                 return Array.Empty<Vector3>();
             
             var mesh = filter.sharedMesh;
-
-            if (mesh.isReadable)
-                return mesh.vertices;
-
-            if (_vertexCache != null && _vertexCache.ContainsKey(mesh))
-                return _vertexCache[mesh];
-            return Array.Empty<Vector3>();
+            return GetVertexData(mesh);
         }
         
         public static Vector3[] GetVertexData(Mesh mesh)
@@ -71,9 +68,9 @@ namespace Hotspot.Editor
             if (mesh == null)
                 return Array.Empty<Vector3>();
 
-            if (mesh.isReadable)
+            if (mesh.isReadable || !Application.isPlaying)
                 return mesh.vertices;
-
+            
             if (_vertexCache != null && _vertexCache.ContainsKey(mesh))
                 return _vertexCache[mesh];
             return Array.Empty<Vector3>();
