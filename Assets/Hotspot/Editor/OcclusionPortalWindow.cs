@@ -78,7 +78,7 @@ namespace Hotspot.Editor
                 {
                     var portal = renderer.gameObject.GetOrAddComponent<OcclusionPortal>();
                     var localMargin = renderer.transform.InverseTransformVector(_boundsMargin);
-                    portal.UpdateBounds(renderer.localBounds.AddMarginToExtends(localMargin.Abs()));
+                    portal.UpdateBounds(renderer.localBounds.AddMarginToExtents(localMargin.Abs()));
 
                     _occlusionPortalDictionary.Add(renderer.gameObject, portal);
                 }

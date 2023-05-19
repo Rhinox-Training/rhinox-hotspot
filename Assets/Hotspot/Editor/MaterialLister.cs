@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-namespace Rhinox.Hotspot.Editor
+namespace Hotspot.Editor
 {
     public class MaterialLister : MonoBehaviour
     {

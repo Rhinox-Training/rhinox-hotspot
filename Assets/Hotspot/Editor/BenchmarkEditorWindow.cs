@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Hotspot.Editor.Utils;
 using Rhinox.GUIUtils;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.GUIUtils.Attributes;
@@ -11,7 +10,6 @@ using Rhinox.Perceptor;
 using Rhinox.Utilities;
 using Sirenix.OdinInspector;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
