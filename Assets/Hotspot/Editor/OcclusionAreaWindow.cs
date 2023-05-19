@@ -58,34 +58,19 @@ public class OcclusionAreaWindow : CustomEditorWindow
         if (_rootObj == null)
             _rootObj = new GameObject(_rootObjName);
 
-        NavMeshBoundsCalculator tempCalc = new NavMeshBoundsCalculator();
+        var boundsInformations = NavMeshHelper.GetNavMeshBounds(_height, _navMeshAreasMask, _margin);
 
-        int navMeshIdx = 0;
-        for (int idx = 0; idx < _navMeshAreaCount; idx++)
+        int meshIdx = 0;
+        foreach (var boundsList in boundsInformations)
         {
-            if (((_navMeshAreasMask >> idx) & 1) == 0)
-                continue;
-
-            //var nave = NavMeshHelper.CalculateTriangulation(1 << idx);
-            var tempMesh = NavMeshHelper.GenerateNavMesh($"Mesh{idx}", 1f, false, 1 << idx);
-            if (tempMesh.vertexCount == 0)
-                continue;
-
-            NavMeshBoundsCalculator.GetNavmeshRects(out List<List<Bounds>> listOfBoundsList, 1 << idx, tempMesh, _margin);
-
-            int meshIdx = 0;
-            foreach (var boundsList in listOfBoundsList)
+            int boundIdx = 0;
+            foreach (var bound in boundsList.ConvexDecomposedBounds)
             {
-                int boundIdx = 0;
-                foreach (var bound in boundsList)
-                {
-                    string autoGenName = $"_Auto_OcclusionArea_{navMeshIdx}_Mesh{meshIdx}_Bound{boundIdx}";
-                    CreateOrAddNewOcclusionArea(bound, autoGenName);
-                    ++boundIdx; ;
-                }
-                ++meshIdx;
+                string autoGenName = $"_Auto_OcclusionArea_{boundsList.Area}_Mesh{meshIdx}_Bound{boundIdx}";
+                CreateOrAddNewOcclusionArea(bound, autoGenName);
+                ++boundIdx; ;
             }
-            ++navMeshIdx;
+            ++meshIdx;
         }
     }
 

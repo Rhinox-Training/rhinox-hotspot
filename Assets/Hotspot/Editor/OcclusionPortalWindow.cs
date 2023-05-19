@@ -7,6 +7,7 @@ using System.Linq;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using System;
+using Rhinox.Lightspeed.Editor;
 
 namespace Hotspot.Editor
 {
