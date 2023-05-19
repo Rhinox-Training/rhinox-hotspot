@@ -59,11 +59,13 @@ namespace Hotspot
     [Serializable]
     public class BigObjectSizeFilter : IRendererFilter
     {
-        public Vector3 _sizeThreshold = new Vector3(.5f, .5f, .01f);
+        public float _sizeThreshold = 0.5f;
+        public int DimensionsThreshold = 2;
 
         public bool IsValid(Renderer renderer)
         {
-            return renderer.bounds.IsSizeBiggerThan(_sizeThreshold);
+            return renderer.bounds.CountDimensionsBiggerThan(_sizeThreshold) >=
+                   Mathf.Min(Mathf.Max(DimensionsThreshold, 1), 3);
         }
     }
 }

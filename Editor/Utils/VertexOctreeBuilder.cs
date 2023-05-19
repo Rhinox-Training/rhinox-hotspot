@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Rhinox.Utilities.Editor;
 using UnityEngine;
 using UnityEngine.Rendering.RendererUtils;
 
@@ -283,7 +284,7 @@ public class VertexOctreeBuilder
             else
             {
                 if (_vertices.Count > 0 && _originMeshes.ContainsAny(meshes))
-                    return Convert.ToInt32(_vertices.Count / BoundsExtensions.GetScreenPixels(_bounds, Camera.main) > _vertsPerPixelThreshold);
+                    return Convert.ToInt32(_vertices.Count / _bounds.GetScreenPixels(Camera.main) > _vertsPerPixelThreshold);
             }
 
             return count;
@@ -327,7 +328,7 @@ public class VertexOctreeBuilder
                     var hotspotInfo = new VertexDensityInfo()
                     {
                         VertexCount = _vertices.Count(x => rendererBounds.Contains(x)),
-                        ScreenOccupation = BoundsExtensions.GetScreenPixels(_bounds, camera != null ? camera : Camera.main)
+                        ScreenOccupation = _bounds.GetScreenPixels(camera != null ? camera : Camera.main)
                     };
                     return hotspotInfo;
                 }
