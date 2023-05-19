@@ -2,7 +2,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Hotspot.Editor.Utils
+namespace Hotspot.Editor
 {
     public enum PlayModeEnterMode
     {

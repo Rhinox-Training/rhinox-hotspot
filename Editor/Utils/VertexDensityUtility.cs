@@ -1,6 +1,4 @@
-﻿using Hotspot.Editor.Utils;
-using Hotspot.Utils;
-using Rhinox.Lightspeed;
+﻿using Rhinox.Lightspeed;
 using UnityEngine;
 
 namespace Hotspot.Editor

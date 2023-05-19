@@ -1,9 +1,10 @@
 using Rhinox.GUIUtils.Editor;
 using System.Collections.Generic;
+using Hotspot.Editor;
 using UnityEditor;
 using UnityEngine;
 
-namespace Rhinox.Hotspot.Editor
+namespace Hotspot.Editor
 {
     public class DenseVertexSpotWindow : CustomEditorWindow
     {
