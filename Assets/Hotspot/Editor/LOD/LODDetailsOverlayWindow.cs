@@ -1,4 +1,5 @@
-﻿using Rhinox.GUIUtils.Editor;
+﻿using System.Globalization;
+using Rhinox.GUIUtils.Editor;
 using Rhinox.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -13,6 +14,7 @@ namespace Hotspot.Editor
         protected override string GetMenuPath() => MENU_ITEM_PATH;
 
         private LODGroup _currentLODGroup;
+        private LOD[] _lods;
         private Camera _camera;
 
         [MenuItem(MENU_ITEM_PATH, false, -199)]
@@ -42,11 +44,12 @@ namespace Hotspot.Editor
                 if (!HotSpotUtils.TryGetMainCamera(out _camera))
                     return;
             }
-            
+
             if (Selection.gameObjects.Length != 1)
                 return;
 
             _currentLODGroup = Selection.gameObjects[0].GetComponent<LODGroup>();
+            _lods = _currentLODGroup.GetLODs();
         }
 
         protected override void OnGUI()
@@ -56,15 +59,20 @@ namespace Hotspot.Editor
                 GUILayout.Label("Please select 1 object containing a LOD group.");
                 return;
             }
-            
+
             GUILayout.BeginHorizontal();
             GUILayout.Label("Current height percentage: ");
             GUILayout.Label(_currentLODGroup.CalculateCurrentTransitionPercentage(_camera).ToString("###"));
             GUILayout.EndHorizontal();
-            
-            GUILayout.BeginHorizontal();
-            
-            GUILayout.EndHorizontal();
+
+            GUILayout.Label("LOD height pixel densities", EditorStyles.boldLabel);
+            for (int i = 0; i < _lods.Length; i++)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label($"\tLOD {i}: ");
+                GUILayout.Label(_currentLODGroup.GetVertexHeightDensityForLOD(i, _camera).ToString("0##.000"));
+                GUILayout.EndHorizontal();
+            }
         }
     }
 }
