@@ -158,12 +158,7 @@ namespace Hotspot.Editor
 
             // Calculate the screen space radius that produces the target density
             float targetScreenRadius = amountOfVertices / targetDensity;
-            targetScreenRadius = (float)Math.Sqrt(targetScreenRadius / Mathf.PI);
-
-            // Get the total height 
-            float totalTargetHeight = targetScreenRadius * 2f;
-
-            float heightPercentage = totalTargetHeight / camera.pixelRect.height;
+            float heightPercentage = targetScreenRadius / camera.pixelRect.height;
 
             return heightPercentage;
         }
