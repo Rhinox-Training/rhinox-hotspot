@@ -1,6 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
 using Hotspot;
+using Rhinox.Lightspeed;
 using Rhinox.Perceptor;
 using UnityEngine;
 
@@ -56,5 +55,33 @@ public static class LODGroupExtensions
         // Calculates the relative height based on the reciprocal of the distance times the height
         // Also check the lodBias in the QualitySettings
         return 1 / distance * height * QualitySettings.lodBias;
+    }
+
+    public static float GetVertexHeightDensityForLOD(this LODGroup lodGroup, int lodIndex)
+    {
+        return lodGroup.GetVertexHeightDensityForLOD(lodIndex, Camera.main);
+    }
+    
+    public static float GetVertexHeightDensityForLOD(this LODGroup lodGroup, int lodIndex, Camera cam)
+    {
+        var lods = lodGroup.GetLODs();
+        if (lodIndex < 0 || lodIndex >= lods.Length)
+        {
+            PLog.Error<HotspotLogger>(
+                $"[LODGroupExtensions,GetVertexHeightDensityForLOD] Invalid LOD index {lodIndex} in LODGroup {lodGroup.name}");
+            return -1f;
+        }
+        var targetLod = lods[lodIndex];
+        var currentHeight = lodGroup.CalculateCurrentHeight(cam);
+        currentHeight *= cam.pixelHeight;
+        
+        int vertexCount = 0;
+        foreach (Renderer r in targetLod.renderers)
+        {
+            if(!MeshInfo.TryCreate(r, out var meshInfo))
+                continue;
+            vertexCount += meshInfo.Mesh.vertexCount;
+        }
+        return vertexCount / currentHeight;
     }
 }
