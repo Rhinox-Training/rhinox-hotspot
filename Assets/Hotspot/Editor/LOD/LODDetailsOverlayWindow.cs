@@ -71,12 +71,12 @@ namespace Hotspot.Editor
             GUILayout.Label(_currentLODGroup.GetCurrentLODIndex(_camera).ToString());
             GUILayout.EndHorizontal();
 
-            GUILayout.Label("LOD height pixel densities", EditorStyles.boldLabel);
+            GUILayout.Label("LOD height vertex densities", EditorStyles.boldLabel);
             for (int i = 0; i < _lods.Length; i++)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"\tLOD {i}: ");
-                GUILayout.Label(_currentLODGroup.GetVertexHeightDensityForLOD(i, _camera).ToString("0##.000"));
+                GUILayout.Label((_currentLODGroup.GetVertexHeightDensityForLOD(i, _camera)/100f).ToString("0##.000"));
                 GUILayout.EndHorizontal();
             }
         }
