@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.Lightspeed;
-using Rhinox.Magnus;
 using Rhinox.Perceptor;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -94,7 +93,7 @@ namespace Hotspot.Editor
         private void OptimizeLoDs(LODGroup lodGroup)
         {
             var lods = lodGroup.GetLODs();
-            if (!TryGetMainCamera(out var camera))
+            if (!HotSpotUtils.TryGetMainCamera(out var camera))
             {
                 PLog.Error<HotspotLogger>("[MaterialRenderingAnalysis,OptimizeLODs] Could not get main camera");
                 return;
@@ -167,34 +166,6 @@ namespace Hotspot.Editor
             float heightPercentage = totalTargetHeight / camera.pixelRect.height;
 
             return heightPercentage;
-        }
-
-        private bool TryGetMainCamera(out Camera camera)
-        {
-            camera = null;
-
-            if (Application.isPlaying)
-            {
-                if (CameraInfo.Instance == null)
-                {
-                    PLog.Warn<HotspotLogger>(
-                        "[MaterialRenderingAnalysis,TakeMaterialSnapshot] CameraInfo.Instance is null");
-                    return false;
-                }
-
-                camera = CameraInfo.Instance.Main;
-            }
-            else
-                camera = Camera.main;
-
-            if (camera == null)
-            {
-                PLog.Warn<HotspotLogger>("[MaterialRenderingAnalysis,TakeMaterialSnapshot] mainCamera is null");
-                return false;
-            }
-
-            camera = SceneView.GetAllSceneCameras()[0];
-            return true;
         }
     }
 }
