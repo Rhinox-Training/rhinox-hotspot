@@ -6,7 +6,9 @@ using Rhinox.Lightspeed;
 using Rhinox.Magnus;
 using Rhinox.Perceptor;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Hotspot.Editor
 {
@@ -18,6 +20,7 @@ namespace Hotspot.Editor
         private int _cullingPercentage = 10;
 
         LOD[] _previousLODs = null;
+        private LODSceneStage _stage;
 
         public override void OnInspectorGUI()
         {
@@ -65,6 +68,21 @@ namespace Hotspot.Editor
                     RevertLODS(lodGroup);
                 }
             }
+
+            if (GUILayout.Button("Test in preview stage"))
+            {
+                LODGroup lodGroup = (LODGroup)target;
+
+                OpenPreviewStage(lodGroup);
+            }
+        }
+
+        private void OpenPreviewStage(LODGroup lodGroup)
+        {
+            _stage = CreateInstance<LODSceneStage>();
+            StageUtility.GoToStage(_stage, true);
+            _stage.SetOriginalScene(SceneManager.GetActiveScene());
+            _stage.SetupScene(lodGroup);
         }
 
         private void RevertLODS(LODGroup lodGroup)
