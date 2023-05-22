@@ -97,7 +97,7 @@ namespace Hotspot.Editor
                 RevertLODS(lodGroup);
             }
 
-            if (GUILayout.Button("Test in preview stage"))
+            if (GUILayout.Button("Preview LODs"))
             {
                 OpenPreviewStage(lodGroup);
             }
