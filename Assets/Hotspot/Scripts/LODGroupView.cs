@@ -73,7 +73,7 @@ namespace Hotspot
             if (_lodGroup == null)
                 return;
 
-            float lodPercentage = _lodGroup.CalculateCurrentHeightPercentage(_mainCamera);
+            float lodPercentage = _lodGroup.CalculateCurrentTransitionPercentage(_mainCamera);
             if (!Mathf.Approximately(lodPercentage, _currentLODPercentage))
             {
                 _currentLODPercentage = (int)lodPercentage;
