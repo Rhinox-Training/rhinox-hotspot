@@ -49,6 +49,8 @@ namespace Hotspot.Editor
                 return;
 
             _currentLODGroup = Selection.gameObjects[0].GetComponent<LODGroup>();
+            if (_currentLODGroup == null)
+                return;
             _lods = _currentLODGroup.GetLODs();
         }
 
@@ -63,6 +65,10 @@ namespace Hotspot.Editor
             GUILayout.BeginHorizontal();
             GUILayout.Label("Current height percentage: ");
             GUILayout.Label(_currentLODGroup.CalculateCurrentTransitionPercentage(_camera).ToString("###"));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Current LOD Index: ");
+            GUILayout.Label(_currentLODGroup.GetCurrentLODIndex(_camera).ToString());
             GUILayout.EndHorizontal();
 
             GUILayout.Label("LOD height pixel densities", EditorStyles.boldLabel);
