@@ -1,0 +1,27 @@
+{
+    "name": "com.open.hotspot.editor.urp",
+    "rootNamespace": "",
+    "references": [
+        "GUID:7262f4696183b8841b571481b3ac0765",
+        "GUID:8a3ca3f2dbf75224f86442f02f663713",
+        "GUID:15fc0a57446b3144c949da3e2b9737a9",
+        "GUID:df380645f10b7bc4b97d4f5eb6303d95"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "URP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "0.1.0",
+            "define": "URP"
+        }
+    ],
+    "noEngineReferences": false
+}
