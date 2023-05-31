@@ -1,13 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using Rhinox.GUIUtils;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.Lightspeed;
 using Rhinox.Magnus;
 using Rhinox.Perceptor;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace Hotspot.Editor
 {
@@ -35,6 +33,7 @@ namespace Hotspot.Editor
             var win = GetWindow(typeof(VertexDensitySnapshotWindow));
             win.titleContent = new GUIContent("Vertex Pixel Density Snapshot");
         }
+        
 
         protected override void Initialize()
         {
