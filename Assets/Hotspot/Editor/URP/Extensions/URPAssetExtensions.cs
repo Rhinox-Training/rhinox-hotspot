@@ -8,7 +8,7 @@ namespace Hotspot.Editor
     /// <summary>
     /// Extension methods for Universal Render Pipeline asset.
     /// </summary>
-    public static class URPAssetExtensions 
+    public static class URPAssetExtensions
     {
         private static readonly FieldInfo RendererDataListField;
 
@@ -34,7 +34,8 @@ namespace Hotspot.Editor
         /// <typeparam name="T">The type of the renderer feature to find.</typeparam>
         /// <param name="scriptableRenderData">The array of ScriptableRendererData to search.</param>
         /// <returns>The found renderer feature or null if not found.</returns>
-        private static ScriptableRendererFeature FindRendererFeature<T>(ScriptableRendererData[] scriptableRenderData) where T : ScriptableRendererFeature
+        private static ScriptableRendererFeature FindRendererFeature<T>(ScriptableRendererData[] scriptableRenderData)
+            where T : ScriptableRendererFeature
         {
             return scriptableRenderData
                 .SelectMany(data => data.rendererFeatures)
@@ -61,6 +62,7 @@ namespace Hotspot.Editor
                     return rendererFeature;
                 }
             }
+
             return null;
         }
 
@@ -84,6 +86,7 @@ namespace Hotspot.Editor
                     return rendererFeature;
                 }
             }
+
             return null;
         }
 
@@ -94,7 +97,8 @@ namespace Hotspot.Editor
         /// <param name="asset">The Universal Render Pipeline asset.</param>
         /// <param name="renderDataIndex">The index of the renderer data to add the feature to (optional).</param>
         /// <returns>The added renderer feature or null if failed.</returns>
-        public static ScriptableRendererFeature AddRenderFeature<T>(this UniversalRenderPipelineAsset asset, int renderDataIndex = 0)
+        public static ScriptableRendererFeature AddRenderFeature<T>(this UniversalRenderPipelineAsset asset,
+            int renderDataIndex = 0)
             where T : ScriptableRendererFeature, new()
         {
             var scriptableRenderData = GetRendererDataArray(asset);
@@ -108,6 +112,7 @@ namespace Hotspot.Editor
                 renderData.SetDirty();
                 return rendererFeature;
             }
+
             return null;
         }
 
@@ -135,6 +140,7 @@ namespace Hotspot.Editor
                     }
                 }
             }
+
             return null;
         }
 
@@ -155,6 +161,35 @@ namespace Hotspot.Editor
                     renderData.SetDirty();
                 }
             }
+        }
+
+        public static bool HasRenderFeature<T>(this UniversalRenderPipelineAsset asset)
+            where T : ScriptableRendererFeature, new()
+        {
+            var scriptableRenderData = GetRendererDataArray(asset);
+            if (scriptableRenderData != null)
+            {
+                return scriptableRenderData.Any(renderData =>
+                    renderData.rendererFeatures.Find(feature => feature is T));
+            }
+
+            return false;
+        }
+
+        public static bool SetPostProcessDataOnRenderer(this UniversalRenderPipelineAsset asset, PostProcessData data, int renderDataIndex = 0)
+        {
+            var scriptableRenderData = GetRendererDataArray(asset);
+
+            if (renderDataIndex >= scriptableRenderData.Length || renderDataIndex < 0)
+                return false;
+            
+            var renderData = scriptableRenderData[renderDataIndex] as UniversalRendererData;
+            if (renderData == null)
+                return false;
+            renderData.postProcessData = data;
+            renderData.SetDirty();
+            
+            return true;
         }
     }
 }
