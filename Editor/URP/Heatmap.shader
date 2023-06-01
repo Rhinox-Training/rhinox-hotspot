@@ -1,19 +1,19 @@
-Shader "Custom/Heatmap"
+Shader "Hidden/Heatmap"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
+        _MainTex ("Albedo (RGB)", 2D) = "black" {}
     }
     SubShader
     {
         Pass
         {
+            name "Invert Color"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
 
             #include "UnityCG.cginc"
-
             struct appdata
             {
                 float4 vertex : POSITION;
@@ -39,7 +39,7 @@ Shader "Custom/Heatmap"
             fixed4 frag (v2f i) : SV_Target
             {
                 fixed4 col = tex2D(_MainTex, i.uv);
-                return 1 - col; // invert the color
+                return fixed4(col.r,0,0,col.a); // invert the color
             }
             ENDCG
         }
