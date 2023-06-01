@@ -8,47 +8,51 @@ namespace Hotspot.Editor
     {
         private class VertexHeatmapPass : ScriptableRenderPass
         {
-            private RenderTargetIdentifier Source { get; set; }
-            private Material _heatmapMaterial = null;
-            private RenderTargetHandle _temporaryColorTexture;
-
-            public void Setup(RenderTargetIdentifier source)
+            private Material _material = null;
+            private string _shaderName = "Hidden/Heatmap";
+            
+            private RenderTargetIdentifier _source;
+            private int _tempRTId;
+            public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
             {
-                this.Source = source;
+                _source = renderingData.cameraData.renderer.cameraColorTarget;
             }
+            
 
             public VertexHeatmapPass()
             {
-                _heatmapMaterial = new Material(Shader.Find("Custom/Heatmap"));
-                _temporaryColorTexture.Init("_TemporaryColorTexture");
+                // Create a material with the given shader name.
+                _material = CoreUtils.CreateEngineMaterial(_shaderName);
+                
+                // The render pass event should occur after all post-processing has been completed.
+                renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
+                
+                // Get the identifier for the temporary render target.
+                _tempRTId = Shader.PropertyToID("_TempRT");
             }
 
             public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
             {
-                CommandBuffer cmd = CommandBufferPool.Get("VertexHeatmapRenderFeature");
+                CommandBuffer cmd = CommandBufferPool.Get("Vertex Heatmap Pass");
+                
+                // Create temporary RenderTexture
+                cmd.GetTemporaryRT(_tempRTId, renderingData.cameraData.cameraTargetDescriptor);
 
-                RenderTextureDescriptor opaqueDesc = renderingData.cameraData.cameraTargetDescriptor;
-                opaqueDesc.depthBufferBits = 0;
+                // Copy the source render texture to the temporary render texture.
+                cmd.Blit(_source, _tempRTId);
 
-                // Setup RenderTexture that will store the color inversion result.
-                cmd.GetTemporaryRT(_temporaryColorTexture.id, opaqueDesc, FilterMode.Bilinear);
+                // Apply the material to the temporary render texture and write the output to the source.
+                cmd.Blit(_tempRTId, _source, _material);
 
-                Blit(cmd, Source, _temporaryColorTexture.Identifier(), _heatmapMaterial);
-
-                // Now blit into the source
-                Blit(cmd, _temporaryColorTexture.Identifier(), Source);
-
+                // Execute the command buffer and release it
                 context.ExecuteCommandBuffer(cmd);
                 CommandBufferPool.Release(cmd);
             }
 
-            public override void FrameCleanup(CommandBuffer cmd)
+            public override void OnCameraCleanup(CommandBuffer cmd)
             {
-                if (_temporaryColorTexture != RenderTargetHandle.CameraTarget)
-                {
-                    cmd.ReleaseTemporaryRT(_temporaryColorTexture.id);
-                    _temporaryColorTexture = RenderTargetHandle.CameraTarget;
-                }
+                // Release temporary RT
+                cmd.ReleaseTemporaryRT(_tempRTId);
             }
         }
 
@@ -61,7 +65,6 @@ namespace Hotspot.Editor
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            _pass.Setup(renderer.cameraColorTarget);
             renderer.EnqueuePass(_pass);
         }
     }
