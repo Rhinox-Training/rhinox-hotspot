@@ -69,7 +69,7 @@ namespace Hotspot.Editor
             }
         }
 
-        private VertexHeatmapPass _pass;
+        private VertexHeatmapPass _heatmapPass;
         public Texture2D DensityTexture2D;
         public uint MaxDensity = 10;
         
@@ -78,15 +78,15 @@ namespace Hotspot.Editor
 
         public override void Create()
         {
-            _pass = new VertexHeatmapPass();
+            _heatmapPass = new VertexHeatmapPass();
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             //Pass the array to the shader
-            _pass.SetShaderTexture(DensityTexture2D);
-            _pass.MaxDensity = MaxDensity;
-            renderer.EnqueuePass(_pass);
+            _heatmapPass.SetShaderTexture(DensityTexture2D);
+            _heatmapPass.MaxDensity = MaxDensity;
+            renderer.EnqueuePass(_heatmapPass);
         }
     }
 }

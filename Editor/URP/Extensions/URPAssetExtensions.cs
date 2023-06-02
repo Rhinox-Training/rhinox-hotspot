@@ -101,6 +101,7 @@ namespace Hotspot.Editor
             int renderDataIndex = 0)
             where T : ScriptableRendererFeature, new()
         {
+            Debug.LogWarning("Adding a new renderer feature of type " + typeof(T).Name + " to the Universal Render Pipeline asset.");
             var scriptableRenderData = GetRendererDataArray(asset);
             if (scriptableRenderData != null)
             {
