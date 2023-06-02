@@ -3,6 +3,8 @@ Shader "Hidden/Heatmap"
     Properties
     {
         _MainTex ("Albedo (RGB)", 2D) = "black" {}
+        _DensityTex ("Albedo (RGB)", 2D) = "white" {}
+        _MaxDensity("Max Density", int) = 1
     }
     SubShader
     {
@@ -30,7 +32,9 @@ Shader "Hidden/Heatmap"
             };
 
             sampler2D _MainTex;
-
+            sampler2D _DensityTex;
+            int _MaxDensity;
+            
             v2f vert(appdata v)
             {
                 v2f o;
@@ -41,8 +45,9 @@ Shader "Hidden/Heatmap"
 
             fixed4 frag(v2f i) : SV_Target
             {
-                fixed4 col = tex2D(_MainTex, i.uv);
-                return fixed4(col.r, 0, 0, col.a); // invert the color
+                fixed4 col = tex2D(_DensityTex, i.uv);
+                col.r = col.r /(float)_MaxDensity;
+                return col;
             }
             ENDCG
         }

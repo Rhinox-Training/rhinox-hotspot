@@ -8,11 +8,14 @@ namespace Hotspot.Editor
     {
         private class VertexHeatmapPass : ScriptableRenderPass
         {
+            public uint MaxDensity = 10;
             private Material _material = null;
             private string _shaderName = "Hidden/Heatmap";
             
             private RenderTargetIdentifier _source;
             private int _tempRTId;
+            
+            private Texture2D _densityTexture;
             public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
             {
                 _source = renderingData.cameraData.renderer.cameraColorTarget;
@@ -31,9 +34,19 @@ namespace Hotspot.Editor
                 _tempRTId = Shader.PropertyToID("_TempRT");
             }
 
+            // Make sure that the length of the density array matches the amount of pixels on the screen
+            public void SetShaderTexture(Texture2D densityTexture)
+            {
+                _densityTexture = densityTexture;
+            }
+            
             public override void Execute(ScriptableRenderContext context, ref RenderingData renderingData)
             {
                 CommandBuffer cmd = CommandBufferPool.Get("Vertex Heatmap Pass");
+
+                // Set the shader properties
+                _material.SetTexture(DensityTexId, _densityTexture);
+                _material.SetInt(MaxDensityId, (int)MaxDensity);
                 
                 // Create temporary RenderTexture
                 cmd.GetTemporaryRT(_tempRTId, renderingData.cameraData.cameraTargetDescriptor);
@@ -57,6 +70,11 @@ namespace Hotspot.Editor
         }
 
         private VertexHeatmapPass _pass;
+        public Texture2D DensityTexture2D;
+        public uint MaxDensity = 10;
+        
+        private static readonly int DensityTexId = Shader.PropertyToID("_DensityTex");
+        private static readonly int MaxDensityId = Shader.PropertyToID("_MaxDensity");
 
         public override void Create()
         {
@@ -65,6 +83,9 @@ namespace Hotspot.Editor
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
+            //Pass the array to the shader
+            _pass.SetShaderTexture(DensityTexture2D);
+            _pass.MaxDensity = MaxDensity;
             renderer.EnqueuePass(_pass);
         }
     }

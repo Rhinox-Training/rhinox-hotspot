@@ -176,19 +176,38 @@ namespace Hotspot.Editor
             return false;
         }
 
-        public static bool SetPostProcessDataOnRenderer(this UniversalRenderPipelineAsset asset, PostProcessData data, int renderDataIndex = 0)
+        public static ScriptableRendererFeature GetRenderFeature<T>(this UniversalRenderPipelineAsset asset)
+            where T : ScriptableRendererFeature, new()
+        {
+            var scriptableRenderData = GetRendererDataArray(asset);
+            if (scriptableRenderData != null)
+            {
+                foreach (var data in scriptableRenderData)
+                {
+                    var result = data.rendererFeatures.FirstOrDefault(x=>x is T);
+                    if(result!=null)
+                        return result;
+                }
+            }
+
+            return null;
+        }
+
+
+        public static bool SetPostProcessDataOnRenderer(this UniversalRenderPipelineAsset asset, PostProcessData data,
+            int renderDataIndex = 0)
         {
             var scriptableRenderData = GetRendererDataArray(asset);
 
             if (renderDataIndex >= scriptableRenderData.Length || renderDataIndex < 0)
                 return false;
-            
+
             var renderData = scriptableRenderData[renderDataIndex] as UniversalRendererData;
             if (renderData == null)
                 return false;
             renderData.postProcessData = data;
             renderData.SetDirty();
-            
+
             return true;
         }
     }
