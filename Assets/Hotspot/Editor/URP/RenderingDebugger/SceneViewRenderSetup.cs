@@ -3,9 +3,11 @@ using UnityEngine.Rendering;
 using System.Collections.Generic;
 using System.Linq;
 using Rhinox.Lightspeed;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 
 namespace Hotspot.Editor
 {
@@ -59,6 +61,13 @@ namespace Hotspot.Editor
             _renderFeature = urpAsset.GetRenderFeature<VertexHeatmapRenderFeature>() as VertexHeatmapRenderFeature;
 
             SceneView.beforeSceneGui += CalculateVertexDensity;
+
+            EditorSceneManager.sceneOpened += RefreshRenderers;
+        }
+
+        private static void RefreshRenderers(Scene scene, OpenSceneMode mode)
+        {
+            _renderers = Object.FindObjectsOfType<Renderer>();
         }
 
         // Method to toggle the heatmap feature on and off
@@ -84,7 +93,6 @@ namespace Hotspot.Editor
             {
                 urpAsset.DisableRenderFeature<VertexHeatmapRenderFeature>();
                 _renderers = null;
-                _pixels = null;
             }
         }
 
@@ -101,7 +109,7 @@ namespace Hotspot.Editor
 
             // Get all renderers
             _renderers ??= Object.FindObjectsOfType<Renderer>();
-
+            
             int width = _mainCamera.pixelWidth;
             int height = _mainCamera.pixelHeight;
 
@@ -115,12 +123,13 @@ namespace Hotspot.Editor
 
                 // Create an array with the size of all the pixels in the texture.
                 _pixels = new Color[width * height];
-                for (int i = 0; i < _pixels.Length; i++)
-                    _pixels[i] = Color.black;
+
+                _densityTexture.SetPixels(_pixels);
             }
 
-            // Set all pixels at once.
-            _densityTexture.SetPixels(_pixels);
+            // Reset all pixels to black and set all pixels in the texture
+            for (int i = 0; i < _pixels.Length; i++)
+                _pixels[i] = Color.black;
 
             // Loop over visible renderers
             foreach (Renderer renderer in _renderers)
@@ -132,7 +141,7 @@ namespace Hotspot.Editor
 
                     // Loop over vertices
                     foreach (Vector3 meshVertex in meshInfo.Mesh.vertices)
-                    {
+                    { 
                         // Transform the vertex to world space
                         var worldSpaceVertex = renderer.transform.TransformPoint(meshVertex);
 
