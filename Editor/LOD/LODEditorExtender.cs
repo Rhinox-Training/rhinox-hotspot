@@ -150,11 +150,10 @@ namespace Hotspot.Editor
             var newLods = lods.Select((lod, i) => CreateOptimizedLOD(lod, camera, i == lods.Length - 1));
             // Save current LODs for potential reversion.
             _previousLoDs = lods;
-            var enumerable = newLods as LOD[] ?? newLods.ToArray();
             // Process new LODs before applying them.
-            ProcessLods(enumerable);
+            ProcessLods(ref newLods);
             // Apply new LODs to the LODGroup.
-            lodGroup.SetLODs(enumerable.ToArray());
+            lodGroup.SetLODs(newLods.ToArray());
         }
 
         /// <summary>
@@ -184,9 +183,9 @@ namespace Hotspot.Editor
         /// Processes and validates new LODs.
         /// </summary>
         /// <param name="newLods">The new LODs to be processed.</param>
-        private void ProcessLods(IEnumerable<LOD> newLods)
+        private void ProcessLods(ref IEnumerable<LOD> newLods)
         {
-            var enumerable = newLods as LOD[] ?? newLods.ToArray();
+            var enumerable = newLods as List<LOD> ?? newLods.ToList();
             // Find LODs with invalid transition height.
             var invalidLods = enumerable.Where(lod => lod.screenRelativeTransitionHeight >= 1f).ToList();
 
@@ -202,6 +201,8 @@ namespace Hotspot.Editor
 
             // Remove LODs with invalid transition height.
             enumerable.RemoveAll(lod => lod.screenRelativeTransitionHeight >= 1f);
+            
+            newLods = enumerable;
         }
 
         /// <summary>
