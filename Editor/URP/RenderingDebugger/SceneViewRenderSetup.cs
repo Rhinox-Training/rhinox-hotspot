@@ -17,6 +17,7 @@ namespace Hotspot.Editor
         // Boolean to store the state of the heatmap feature
         private static bool _heatmapEnabled = false;
         private static VertexHeatmapRenderFeature _renderFeature = null;
+        private static VertexHeatmapRenderFeature.VertexHeatmapSettings _heatmapSettings = null;
         private static Camera _mainCamera;
         private static Renderer[] _renderers;
 
@@ -24,6 +25,28 @@ namespace Hotspot.Editor
         private static Color[] _pixels;
 
         static SceneViewRenderSetup()
+        {
+            CreateUI();
+            
+            _heatmapSettings = new VertexHeatmapRenderFeature.VertexHeatmapSettings();
+
+            // Fetch the current render pipeline asset
+            UniversalRenderPipelineAsset urpAsset = GraphicsSettings.currentRenderPipeline as
+                UniversalRenderPipelineAsset;
+
+            // Get the first vertex heatmap render feature
+            _renderFeature = urpAsset.GetRenderFeature<VertexHeatmapRenderFeature>() as VertexHeatmapRenderFeature;
+            if (_renderFeature)
+            {
+                _renderFeature.HeatmapSettings = _heatmapSettings;
+            }
+
+            SceneView.beforeSceneGui += CalculateVertexDensity;
+
+            EditorSceneManager.sceneOpened += RefreshRenderers;
+        }
+
+        private static void CreateUI()
         {
             // Create a list of widgets for the DebugUI
             var widgetList = new List<DebugUI.Widget>();
@@ -43,27 +66,83 @@ namespace Hotspot.Editor
                     "Disable Post processing in RenderingDebugger - Rendering - Post-processing, to ensure correct view.",
                 style = DebugUI.MessageBox.Style.Warning
             };
+
+            var hexagonalUI = CreateHexagonalSettingsUI();
+            var gaussUI = CreateGaussSettingsUI();
+            
             widgetList.Add(box);
             widgetList.Add(heatmapCheckbox);
+            widgetList.Add(hexagonalUI);
+            widgetList.Add(gaussUI);
 
             // Create a new panel (tab) in the Rendering Debugger
             var panel = DebugManager.instance.GetPanel("Hotspot", createIfNull: true);
 
             // Add the widgets to the panel
             panel.children.Add(widgetList.ToArray());
-
-            // Fetch the current render pipeline asset
-            UniversalRenderPipelineAsset urpAsset = GraphicsSettings.currentRenderPipeline as
-                UniversalRenderPipelineAsset;
-
-            // Get the first vertex heatmap render feature
-            _renderFeature = urpAsset.GetRenderFeature<VertexHeatmapRenderFeature>() as VertexHeatmapRenderFeature;
-
-            SceneView.beforeSceneGui += CalculateVertexDensity;
-
-            EditorSceneManager.sceneOpened += RefreshRenderers;
         }
 
+        private static DebugUI.Foldout CreateHexagonalSettingsUI()
+        {
+            var radiusUI = new DebugUI.UIntField()
+            {
+                displayName = "Hexagon blur radius",
+                getter = () => _heatmapSettings.HexagonBlurRadius,
+                setter = value => _heatmapSettings.HexagonBlurRadius = value,
+                min = () => 1
+            };
+
+            var maxDensityUI = new DebugUI.UIntField()
+            {
+                displayName = "Max vertex density",
+                getter = () => _heatmapSettings.MaxDensity,
+                setter = value => _heatmapSettings.MaxDensity = value,
+                min = () => 1
+            };
+
+            var hexagonalUI = new DebugUI.Foldout
+            {
+                displayName = "Hexagonal blur step settings",
+                children =
+                {
+                    radiusUI,
+                    maxDensityUI
+                }
+            };
+
+            return hexagonalUI;
+        }
+
+        private static DebugUI.Foldout CreateGaussSettingsUI()
+        {
+            var radiusUI = new DebugUI.UIntField()
+            {
+                displayName = "Gaussian blur radius",
+                getter = () => _heatmapSettings.GaussianBlurRadius,
+                setter = value => _heatmapSettings.GaussianBlurRadius = value,
+                min = () => 1
+            };
+
+            var sigmaUI = new DebugUI.FloatField()
+            {
+                displayName = "Gaussian blur sigma",
+                getter = () => _heatmapSettings.GaussianBlurSigma,
+                setter = value => _heatmapSettings.GaussianBlurSigma = value,
+                min = () => 0.01f
+            };
+            var gaussUI = new DebugUI.Foldout
+            {
+                displayName = "Gaussian blur step settings",
+                children =
+                {
+                    radiusUI,
+                    sigmaUI
+                }
+            };
+
+            return gaussUI;
+        }
+        
         private static void RefreshRenderers(Scene scene, OpenSceneMode mode)
         {
             _renderers = Object.FindObjectsOfType<Renderer>();
@@ -80,6 +159,7 @@ namespace Hotspot.Editor
             if (!urpAsset.HasRenderFeature<VertexHeatmapRenderFeature>())
             {
                 _renderFeature = urpAsset.AddRenderFeature<VertexHeatmapRenderFeature>() as VertexHeatmapRenderFeature;
+                if (_renderFeature != null) _renderFeature.HeatmapSettings = _heatmapSettings;
             }
 
             // Enable or disable the heatmap feature based on the checkbox value
@@ -99,7 +179,7 @@ namespace Hotspot.Editor
         {
             if (!_heatmapEnabled)
                 return;
-
+            _renderFeature.HeatmapSettings = _heatmapSettings;
             Profiler.BeginSample("CalculateVertexDensity");
 
             // Get Active camera
@@ -108,7 +188,7 @@ namespace Hotspot.Editor
 
             // Get all renderers
             _renderers ??= Object.FindObjectsOfType<Renderer>();
-            
+
             int width = _mainCamera.pixelWidth;
             int height = _mainCamera.pixelHeight;
 
@@ -118,7 +198,7 @@ namespace Hotspot.Editor
                 _densityTexture = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
 
                 // Set the texture on the feature
-                _renderFeature.DensityTexture2D = _densityTexture;
+                _renderFeature.DensityTexture = _densityTexture;
 
                 // Create an array with the size of all the pixels in the texture.
                 _pixels = new Color[width * height];
@@ -140,7 +220,7 @@ namespace Hotspot.Editor
 
                     // Loop over vertices
                     foreach (Vector3 meshVertex in meshInfo.Mesh.vertices)
-                    { 
+                    {
                         // Transform the vertex to world space
                         var worldSpaceVertex = renderer.transform.TransformPoint(meshVertex);
 
