@@ -8,9 +8,9 @@ namespace Hotspot.Editor
     {
         private class VertexHeatmapPass : ScriptableRenderPass
         {
-            public uint MaxDensity = 10;
+            public uint MaxDensity = 5;
             private Material _material = null;
-            private string _shaderName = "Hidden/Heatmap";
+            private string _hexagonShaderName = "Hidden/HeatHexagonBlur";
             
             private RenderTargetIdentifier _source;
             private int _tempRTId;
@@ -25,7 +25,7 @@ namespace Hotspot.Editor
             public VertexHeatmapPass()
             {
                 // Create a material with the given shader name.
-                _material = CoreUtils.CreateEngineMaterial(_shaderName);
+                _material = CoreUtils.CreateEngineMaterial(_hexagonShaderName);
                 
                 // The render pass event should occur after all post-processing has been completed.
                 renderPassEvent = RenderPassEvent.AfterRenderingPostProcessing;
@@ -56,7 +56,7 @@ namespace Hotspot.Editor
 
                 // Apply the material to the temporary render texture and write the output to the source.
                 cmd.Blit(_tempRTId, _source, _material);
-
+                
                 // Execute the command buffer and release it
                 context.ExecuteCommandBuffer(cmd);
                 CommandBufferPool.Release(cmd);
@@ -71,7 +71,7 @@ namespace Hotspot.Editor
 
         private VertexHeatmapPass _heatmapPass;
         public Texture2D DensityTexture2D;
-        public uint MaxDensity = 10;
+        public uint MaxDensity = 5;
         
         private static readonly int DensityTexId = Shader.PropertyToID("_DensityTex");
         private static readonly int MaxDensityId = Shader.PropertyToID("_MaxDensity");
