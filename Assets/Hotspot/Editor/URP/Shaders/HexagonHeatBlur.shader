@@ -21,6 +21,8 @@ Shader "Hidden/HeatHexagonBlur"
             #pragma fragment frag
             #include "UnityCG.cginc"
 
+            #define HEXAGON_ANGLE 1.04719755f
+
             struct appdata
             {
                 float4 vertex : POSITION;
@@ -46,7 +48,7 @@ Shader "Hidden/HeatHexagonBlur"
                 o.uv = v.uv;
                 return o;
             }
-
+            
             fixed4 frag(v2f i) : SV_Target
             {
                 // Get the size of 1 pixel
@@ -56,20 +58,15 @@ Shader "Hidden/HeatHexagonBlur"
                 fixed4 col = tex2D(_DensityTex, i.uv);
                 float lerp_val = col.r / (float)_MaxDensity;
 
-                // Initialize the loop variables
-                int amount_sample_corners = 6;
-                float sample_angle = 360.f / amount_sample_corners * UNITY_PI / 180.f;
-                int radius = 10;
-                
                 // For every corner
-                for (int index = 0; index < amount_sample_corners; index++)
+                for (int index = 0; index < 6; index++)
                 {
                     // For every sample
-                    for (int sample_idx = 1; sample_idx <= radius; sample_idx++)
+                    for (int sample_idx = 1; sample_idx <= _Radius; sample_idx++)
                     {
                         // Calculate the current offset
-                        float2 offset = float2(sample_idx * pixel_size.x * cos(index * sample_angle),
-                                               sample_idx * pixel_size.y * sin(index * sample_angle));
+                        float2 offset = float2(sample_idx * pixel_size.x * cos(index * HEXAGON_ANGLE),
+                                               sample_idx * pixel_size.y * sin(index * HEXAGON_ANGLE));
 
                         // Get the density in this pixel and clamp it
                         float vertex_density = tex2D(_DensityTex, i.uv + offset) / (float)_MaxDensity;
@@ -81,7 +78,7 @@ Shader "Hidden/HeatHexagonBlur"
                 }
 
                 // Normalize the final lerp value
-                lerp_val /= 1.f + amount_sample_corners * radius;
+                lerp_val /= 1.f + 6 * _Radius;
 
                 // Set the final color
                 col = lerp(fixed4(0, 0, 1, 1),fixed4(1, 0, 0, 1), lerp_val);
