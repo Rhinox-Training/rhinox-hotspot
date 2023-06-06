@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Rhinox.Perceptor;
 using UnityEngine;
 
 namespace Hotspot.Editor
@@ -14,6 +15,18 @@ namespace Hotspot.Editor
         /// <returns></returns>
         public static Texture2D Create1DGradientTexture(int width, SortedDictionary<float, Color> gradientStops)
         {
+            // Make sure there is a begin and end stop
+            if (gradientStops.Count < 2)
+            {
+                PLog.Error<HotspotLogger>("[TextureFactory, Create1DGradientTexture] Gradient texture must have at least 2 stops");
+                return null;
+            }
+            
+            if(gradientStops.First().Key>0)
+                gradientStops.Add(0, gradientStops.First().Value);
+            if(gradientStops.Last().Key<1) 
+                gradientStops.Add(1, gradientStops.Last().Value);
+            
             Texture2D gradientTexture = new Texture2D(width, 1, TextureFormat.RG32, false);
 
             var previousStop = new KeyValuePair<float, Color>(0, gradientStops[0]);
