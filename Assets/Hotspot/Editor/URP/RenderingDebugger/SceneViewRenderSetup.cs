@@ -115,6 +115,7 @@ namespace Hotspot.Editor
 
             // Add the widgets to the panel
             panel.children.Add(widgetList.ToArray());
+            panel.SetDirty();
         }
 
         private static DebugUI.Foldout CreateHexagonalSettingsUI()
