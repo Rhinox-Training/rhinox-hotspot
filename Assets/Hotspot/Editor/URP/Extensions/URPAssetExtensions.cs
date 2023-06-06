@@ -101,7 +101,8 @@ namespace Hotspot.Editor
             int renderDataIndex = 0)
             where T : ScriptableRendererFeature, new()
         {
-            Debug.LogWarning("Adding a new renderer feature of type " + typeof(T).Name + " to the Universal Render Pipeline asset.");
+            Debug.LogWarning("Adding a new renderer feature of type " + typeof(T).Name +
+                             " to the Universal Render Pipeline asset.");
             var scriptableRenderData = GetRendererDataArray(asset);
             if (scriptableRenderData != null)
             {
@@ -168,13 +169,8 @@ namespace Hotspot.Editor
             where T : ScriptableRendererFeature, new()
         {
             var scriptableRenderData = GetRendererDataArray(asset);
-            if (scriptableRenderData != null)
-            {
-                return scriptableRenderData.Any(renderData =>
-                    renderData.rendererFeatures.Find(feature => feature is T));
-            }
-
-            return false;
+            return scriptableRenderData != null && scriptableRenderData
+                .SelectMany(rendererData => rendererData.rendererFeatures).OfType<T>().Any();
         }
 
         public static ScriptableRendererFeature GetRenderFeature<T>(this UniversalRenderPipelineAsset asset)
@@ -185,8 +181,8 @@ namespace Hotspot.Editor
             {
                 foreach (var data in scriptableRenderData)
                 {
-                    var result = data.rendererFeatures.FirstOrDefault(x=>x is T);
-                    if(result!=null)
+                    var result = data.rendererFeatures.FirstOrDefault(x => x is T);
+                    if (result != null)
                         return result;
                 }
             }

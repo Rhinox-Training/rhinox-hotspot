@@ -18,20 +18,39 @@ namespace Hotspot.Editor
         private static bool _heatmapEnabled = false;
         private static VertexHeatmapRenderFeature _renderFeature = null;
         private static VertexHeatmapRenderFeature.VertexHeatmapSettings _heatmapSettings = null;
+
         private static Camera _mainCamera;
         private static Renderer[] _renderers;
 
-        private static Texture2D _densityTexture;
         private static Color[] _pixels;
+        private static Texture2D _densityTexture;
+
+        private const int GRADIENT_TEXTURE_WIDTH = 128;
+
+        public static Texture2D GradientTexture
+        {
+            get
+            {
+                if (_gradientTexture == null)
+                    _gradientTexture = CreateGradientTexture();
+
+                return _gradientTexture;
+            }
+        }
+
+        private static Texture2D _gradientTexture;
 
         static SceneViewRenderSetup()
         {
             CreateUI();
 
-            _heatmapSettings = new VertexHeatmapRenderFeature.VertexHeatmapSettings();
+            _heatmapSettings = new VertexHeatmapRenderFeature.VertexHeatmapSettings
+            {
+                HeatmapTexture = GradientTexture
+            };
 
             // Fetch the current render pipeline asset
-            UniversalRenderPipelineAsset urpAsset = GraphicsSettings.currentRenderPipeline as
+            var urpAsset = GraphicsSettings.currentRenderPipeline as
                 UniversalRenderPipelineAsset;
 
             // Get the first vertex heatmap render feature
@@ -41,9 +60,25 @@ namespace Hotspot.Editor
                 _renderFeature.HeatmapSettings = _heatmapSettings;
             }
 
+            SceneView.beforeSceneGui -= CalculateVertexDensity;
             SceneView.beforeSceneGui += CalculateVertexDensity;
+            EditorSceneManager.sceneOpened -= OnSceneOpened;
+            EditorSceneManager.sceneOpened += OnSceneOpened;
 
-            EditorSceneManager.sceneOpened += RefreshRenderers;
+            EditorApplication.quitting += OnQuit;
+        }
+
+        private static void OnQuit()
+        {
+            EditorSceneManager.sceneOpened -= OnSceneOpened;
+            SceneView.beforeSceneGui -= CalculateVertexDensity;
+
+            // Fetch the current render pipeline asset
+            UniversalRenderPipelineAsset urpAsset = GraphicsSettings.currentRenderPipeline as
+                UniversalRenderPipelineAsset;
+
+            // Remove the vertex heatmap render feature
+            urpAsset.RemoveAllRenderFeatures<VertexHeatmapRenderFeature>();
         }
 
         private static void CreateUI()
@@ -101,17 +136,39 @@ namespace Hotspot.Editor
                 max = () => 255
             };
 
+            var textureUI = new TextureDebugUIField()
+            {
+                displayName = "Heatmap gradient texture",
+                getter = () => _heatmapSettings.HeatmapTexture,
+                setter = value => _heatmapSettings.HeatmapTexture = value
+            };
+
             var hexagonalUI = new DebugUI.Foldout
             {
                 displayName = "Hexagonal blur step settings",
                 children =
                 {
                     radiusUI,
-                    maxDensityUI
+                    maxDensityUI,
+                    textureUI
                 }
             };
 
             return hexagonalUI;
+        }
+
+        private static Texture2D CreateGradientTexture()
+        {
+            var gradientStops = new SortedDictionary<float, Color>
+            {
+                // Default gradient is sunrise
+                // see https://learn.microsoft.com/en-us/bingmaps/v8-web-control/map-control-concepts/heat-map-module-examples/heat-map-color-gradients
+                { 0f, Color.red },
+                { .66f, Color.yellow },
+                { 1f, Color.white }
+            };
+
+            return TextureFactory.Create1DGradientTexture(GRADIENT_TEXTURE_WIDTH, gradientStops);
         }
 
         private static DebugUI.Foldout CreateGaussSettingsUI()
@@ -144,9 +201,19 @@ namespace Hotspot.Editor
             return gaussUI;
         }
 
-        private static void RefreshRenderers(Scene scene, OpenSceneMode mode)
+        private static void OnSceneOpened(Scene scene, OpenSceneMode mode)
         {
+            // Refresh the render cache
             _renderers = Object.FindObjectsOfType<Renderer>();
+
+            // Fetch the current render pipeline asset
+            UniversalRenderPipelineAsset urpAsset = GraphicsSettings.currentRenderPipeline as
+                UniversalRenderPipelineAsset;
+
+            // Remove the vertex heatmap render feature
+            urpAsset.RemoveAllRenderFeatures<VertexHeatmapRenderFeature>();
+
+            _heatmapEnabled = false;
         }
 
         // Method to toggle the heatmap feature on and off
@@ -162,6 +229,8 @@ namespace Hotspot.Editor
                 _renderFeature = urpAsset.AddRenderFeature<VertexHeatmapRenderFeature>() as VertexHeatmapRenderFeature;
                 if (_renderFeature != null) _renderFeature.HeatmapSettings = _heatmapSettings;
             }
+            else
+                _renderFeature = urpAsset.GetRenderFeature<VertexHeatmapRenderFeature>() as VertexHeatmapRenderFeature;
 
             // Enable or disable the heatmap feature based on the checkbox value
             if (toggleValue)
@@ -206,6 +275,10 @@ namespace Hotspot.Editor
 
                 _densityTexture.SetPixels(_pixels);
             }
+
+            // Assure a gradient texture is set!
+            if (_heatmapSettings.HeatmapTexture == null)
+                _heatmapSettings.HeatmapTexture = GradientTexture;
 
             // Reset all pixels to black and set all pixels in the texture
             for (int i = 0; i < _pixels.Length; i++)
