@@ -70,7 +70,6 @@ namespace Hotspot.Editor
                 _gaussMaterial.SetInt(RadiusId, (int)_heatmapSettings.GaussianBlurRadius);
                 _gaussMaterial.SetFloat(Sigma, _heatmapSettings.GaussianBlurSigma);
 
-
                 // Create temporary RenderTexture
                 cmd.GetTemporaryRT(_tempRTId, renderingData.cameraData.cameraTargetDescriptor);
 
@@ -82,7 +81,6 @@ namespace Hotspot.Editor
 
                 // Apply horizontal Gaussian blur
                 cmd.Blit(_source, _tempRTId, _gaussMaterial, 0);
-
                 // Apply vertical Gaussian blur
                 cmd.Blit(_tempRTId, _source, _gaussMaterial, 1);
 
