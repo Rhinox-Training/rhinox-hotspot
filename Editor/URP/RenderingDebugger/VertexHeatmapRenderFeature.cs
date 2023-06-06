@@ -8,10 +8,12 @@ namespace Hotspot.Editor
     {
         public class VertexHeatmapSettings
         {
-            public uint MaxDensity = 5;
-            public uint HexagonBlurRadius = 10;
+            public uint MaxDensity = 25;
+            public uint HexagonBlurRadius = 5;
             public uint GaussianBlurRadius = 5;
-            public float GaussianBlurSigma = 0.03f;
+            public float GaussianBlurSigma = 1f;
+
+            public Texture2D HeatmapTexture;
         }
 
         private class VertexHeatmapPass : ScriptableRenderPass
@@ -30,6 +32,8 @@ namespace Hotspot.Editor
             private static readonly int MaxDensityId = Shader.PropertyToID("_MaxDensity");
             private static readonly int RadiusId = Shader.PropertyToID("_Radius");
             private static readonly int Sigma = Shader.PropertyToID("_Sigma");
+            private static readonly int HeatTex = Shader.PropertyToID("_HeatTex");
+
             private Texture2D _densityTexture;
 
             public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
@@ -69,6 +73,7 @@ namespace Hotspot.Editor
                 _material.SetInt(RadiusId, (int)_heatmapSettings.HexagonBlurRadius);
                 _gaussMaterial.SetInt(RadiusId, (int)_heatmapSettings.GaussianBlurRadius);
                 _gaussMaterial.SetFloat(Sigma, _heatmapSettings.GaussianBlurSigma);
+                _material.SetTexture(HeatTex, _heatmapSettings.HeatmapTexture);
 
                 // Create temporary RenderTexture
                 cmd.GetTemporaryRT(_tempRTId, renderingData.cameraData.cameraTargetDescriptor);
