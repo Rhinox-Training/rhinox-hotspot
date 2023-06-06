@@ -19,57 +19,34 @@ Shader "Hidden/HeatHexagonBlur"
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            #include "UnityCG.cginc"
-
-            #define HEXAGON_ANGLE 1.04719755f
-
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-            };
-
-            struct v2f
-            {
-                float2 uv : TEXCOORD0;
-                float4 vertex : SV_POSITION;
-            };
-
+            #include "Blur.cginc"
+            
             sampler2D _MainTex;
             sampler2D _DensityTex;
             int _MaxDensity;
             int _Radius;
 
-
-            v2f vert(appdata v)
+            fixed4 frag(blur_frag_in i) : SV_Target
             {
-                v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = v.uv;
-                return o;
-            }
-            
-            fixed4 frag(v2f i) : SV_Target
-            {
-                // Get the size of 1 pixel
-                float2 pixel_size = float2(_ScreenParams.z - 1, _ScreenParams.w - 1);
-
                 // Get the color of the center
                 fixed4 col = tex2D(_DensityTex, i.uv);
                 float lerp_val = col.r / (float)_MaxDensity;
-
+                
                 // For every corner
                 for (int index = 0; index < 6; index++)
                 {
+                    float scaled_corner_cos = get_hexagon_cos(index) * i.pixel_size.x;
+                    float scaled_corner_sin = get_hexagon_sin(index) * i.pixel_size.y;
+
                     // For every sample
                     for (int sample_idx = 1; sample_idx <= _Radius; sample_idx++)
                     {
                         // Calculate the current offset
-                        float2 offset = float2(sample_idx * pixel_size.x * cos(index * HEXAGON_ANGLE),
-                                               sample_idx * pixel_size.y * sin(index * HEXAGON_ANGLE));
+                        float2 offset = float2(sample_idx * scaled_corner_cos,
+                                               sample_idx * scaled_corner_sin);
 
                         // Get the density in this pixel and clamp it
-                        float vertex_density = tex2D(_DensityTex, i.uv + offset) / (float)_MaxDensity;
+                        float vertex_density = tex2D(_DensityTex, i.uv + offset).r;
                         vertex_density = clamp(vertex_density, 0, 1);
 
                         // Add to the total

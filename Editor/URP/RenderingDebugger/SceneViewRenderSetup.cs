@@ -27,7 +27,7 @@ namespace Hotspot.Editor
         static SceneViewRenderSetup()
         {
             CreateUI();
-            
+
             _heatmapSettings = new VertexHeatmapRenderFeature.VertexHeatmapSettings();
 
             // Fetch the current render pipeline asset
@@ -69,7 +69,7 @@ namespace Hotspot.Editor
 
             var hexagonalUI = CreateHexagonalSettingsUI();
             var gaussUI = CreateGaussSettingsUI();
-            
+
             widgetList.Add(box);
             widgetList.Add(heatmapCheckbox);
             widgetList.Add(hexagonalUI);
@@ -97,7 +97,8 @@ namespace Hotspot.Editor
                 displayName = "Max vertex density",
                 getter = () => _heatmapSettings.MaxDensity,
                 setter = value => _heatmapSettings.MaxDensity = value,
-                min = () => 1
+                min = () => 1,
+                max = () => 255
             };
 
             var hexagonalUI = new DebugUI.Foldout
@@ -142,7 +143,7 @@ namespace Hotspot.Editor
 
             return gaussUI;
         }
-        
+
         private static void RefreshRenderers(Scene scene, OpenSceneMode mode)
         {
             _renderers = Object.FindObjectsOfType<Renderer>();
@@ -210,6 +211,9 @@ namespace Hotspot.Editor
             for (int i = 0; i < _pixels.Length; i++)
                 _pixels[i] = Color.black;
 
+            // Init the pixel step
+            float pixelStep = 1f / _heatmapSettings.MaxDensity;
+
             // Loop over visible renderers
             foreach (Renderer renderer in _renderers)
             {
@@ -232,7 +236,7 @@ namespace Hotspot.Editor
                         {
                             // Get the previous color   
                             int index = (int)screenPos.y * width + (int)screenPos.x;
-                            _pixels[index].r += 1;
+                            _pixels[index].r += pixelStep;
                         }
                     }
                 }
