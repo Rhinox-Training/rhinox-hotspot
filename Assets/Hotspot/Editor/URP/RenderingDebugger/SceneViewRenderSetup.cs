@@ -266,7 +266,11 @@ namespace Hotspot.Editor
             //Init the texture and white pixels
             if (_densityTexture == null || _densityTexture.width != width || _densityTexture.height != height)
             {
-                _densityTexture = new Texture2D(width, height, TextureFormat.RGBAFloat, false);
+                _densityTexture = new Texture2D(width, height, TextureFormat.RGBAFloat, false)
+                {
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp
+                };
 
                 // Set the texture on the feature
                 _renderFeature.DensityTexture = _densityTexture;
