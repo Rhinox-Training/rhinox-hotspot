@@ -18,17 +18,22 @@ namespace Hotspot.Editor
             // Make sure there is a begin and end stop
             if (gradientStops.Count < 2)
             {
-                PLog.Error<HotspotLogger>("[TextureFactory, Create1DGradientTexture] Gradient texture must have at least 2 stops");
+                PLog.Error<HotspotLogger>(
+                    "[TextureFactory, Create1DGradientTexture] Gradient texture must have at least 2 stops");
                 return null;
             }
-            
-            if(gradientStops.First().Key>0)
-                gradientStops.Add(0, gradientStops.First().Value);
-            if(gradientStops.Last().Key<1) 
-                gradientStops.Add(1, gradientStops.Last().Value);
-            
-            Texture2D gradientTexture = new Texture2D(width, 1, TextureFormat.RG32, false);
 
+            if (gradientStops.First().Key > 0)
+                gradientStops.Add(0, gradientStops.First().Value);
+            if (gradientStops.Last().Key < 1)
+                gradientStops.Add(1, gradientStops.Last().Value);
+
+            Texture2D gradientTexture = new Texture2D(width, 1, TextureFormat.RG32, false)
+            {
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp
+            };
+            
             var previousStop = new KeyValuePair<float, Color>(0, gradientStops[0]);
             var nextStop = new KeyValuePair<float, Color>(1, gradientStops[gradientStops.Keys.Max()]);
 
