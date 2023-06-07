@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using Rhinox.Perceptor;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -101,8 +102,8 @@ namespace Hotspot.Editor
             int renderDataIndex = 0)
             where T : ScriptableRendererFeature, new()
         {
-            Debug.LogWarning("Adding a new renderer feature of type " + typeof(T).Name +
-                             " to the Universal Render Pipeline asset.");
+            PLog.Warn<HotspotLogger>("Adding a new renderer feature of type " + typeof(T).Name +
+                                     " to the Universal Render Pipeline asset.");
             var scriptableRenderData = GetRendererDataArray(asset);
             if (scriptableRenderData != null)
             {
@@ -115,6 +116,9 @@ namespace Hotspot.Editor
                 return rendererFeature;
             }
 
+            PLog.Error<HotspotLogger>(
+                "[URPAssetExtensions, AddRenderFeature] Failed to add a new renderer feature of type {nameof(T)} to the Universal Render Pipeline asset.",
+                asset);
             return null;
         }
 
