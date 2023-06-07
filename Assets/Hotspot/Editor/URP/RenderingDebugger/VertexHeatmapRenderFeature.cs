@@ -12,6 +12,7 @@ namespace Hotspot.Editor
             public uint HexagonBlurRadius = 5;
             public uint GaussianBlurRadius = 5;
             public float GaussianBlurSigma = 1f;
+            public uint AmountOfBlurIterations = 2;
 
             public Texture2D HeatmapTexture;
         }
@@ -84,10 +85,15 @@ namespace Hotspot.Editor
                 // Apply the material to the temporary render texture and write the output to the source.
                 cmd.Blit(_tempRTId, _source, _material);
 
-                // Apply horizontal Gaussian blur
-                cmd.Blit(_source, _tempRTId, _gaussMaterial, 0);
-                // Apply vertical Gaussian blur
-                cmd.Blit(_tempRTId, _source, _gaussMaterial, 1);
+                // Apply the Gaussian blur as often as desired (at least 1)
+                for (uint i = 0; i < _heatmapSettings.AmountOfBlurIterations; i++)
+                {
+                    // Apply horizontal Gaussian blur
+                    cmd.Blit(_source, _tempRTId, _gaussMaterial, 0);
+                    // Apply vertical Gaussian blur
+                    cmd.Blit(_tempRTId, _source, _gaussMaterial, 1);
+                }
+
 
                 // Execute the command buffer and release it
                 context.ExecuteCommandBuffer(cmd);

@@ -174,6 +174,14 @@ namespace Hotspot.Editor
 
         private static DebugUI.Foldout CreateGaussSettingsUI()
         {
+            var blurIterationsUI = new DebugUI.UIntField()
+            {
+                displayName = "Amount of blur iterations",
+                getter = () => _heatmapSettings.AmountOfBlurIterations,
+                setter = value => _heatmapSettings.AmountOfBlurIterations = value,
+                min = () => 1
+            };
+            
             var radiusUI = new DebugUI.UIntField()
             {
                 displayName = "Gaussian blur radius",
@@ -194,6 +202,7 @@ namespace Hotspot.Editor
                 displayName = "Gaussian blur step settings",
                 children =
                 {
+                    blurIterationsUI,
                     radiusUI,
                     sigmaUI
                 }
