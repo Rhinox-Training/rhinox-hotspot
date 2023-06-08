@@ -36,7 +36,7 @@ public class OcclusionAreaWindow : CustomEditorWindow
     private Vector2 _scrollPos;
     private int _selectedAreaIndex;
 
-    [MenuItem("Tools/HotSpot/Occlusion Area Editor", false, 50)]
+    [MenuItem(HotspotWindowHelper.TOOLS_PREFIX +"Occlusion Area Editor", false, 50)]
     public static void ShowWindow()
     {
         var win = GetWindow(typeof(OcclusionAreaWindow));

@@ -30,7 +30,7 @@ namespace Hotspot.Editor
         private ListDrawable _rendererFiltersDrawer;
 
 
-        [MenuItem("Tools/HotSpot/Occlusion Portal Editor", false, 50)]
+        [MenuItem(HotspotWindowHelper.TOOLS_PREFIX +"Occlusion Portal Editor", false, 50)]
         public static void ShowWindow()
         {
             var win = GetWindow(typeof(OcclusionPortalWindow));

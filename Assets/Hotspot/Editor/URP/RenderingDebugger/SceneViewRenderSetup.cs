@@ -67,7 +67,7 @@ namespace Hotspot.Editor
 
         private static void SetRenderFeatureSettings()
         {
-            if(_renderFeature)
+            if (_renderFeature)
                 _renderFeature.HeatmapSettings = _heatmapSettings;
         }
 
@@ -171,8 +171,10 @@ namespace Hotspot.Editor
                 { .66f, Color.yellow },
                 { 1f, Color.white }
             };
-
-            return TextureFactory.Create1DGradientTexture(GRADIENT_TEXTURE_WIDTH, gradientStops);
+            var texture = TextureFactory.Create1DGradientTexture(GRADIENT_TEXTURE_WIDTH, gradientStops);
+            texture.filterMode = FilterMode.Point;
+            texture.wrapMode = TextureWrapMode.Mirror;
+            return texture;
         }
 
         private static DebugUI.Foldout CreateGaussSettingsUI()
@@ -184,7 +186,7 @@ namespace Hotspot.Editor
                 setter = value => _heatmapSettings.AmountOfBlurIterations = value,
                 min = () => 1
             };
-            
+
             var radiusUI = new DebugUI.UIntField()
             {
                 displayName = "Gaussian blur radius",
@@ -254,6 +256,5 @@ namespace Hotspot.Editor
                 urpAsset.DisableRenderFeature<VertexHeatmapRenderFeature>();
             }
         }
-        
     }
 }

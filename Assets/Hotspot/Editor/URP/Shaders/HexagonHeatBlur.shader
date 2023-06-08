@@ -59,7 +59,7 @@ Shader "Hidden/HeatHexagonBlur"
                 lerp_val /= 1.f + 6 * _Radius;
 
                 // Set the final color
-                col = tex2D(_HeatTex,float2(lerp_val,0));
+                col = tex2D(_HeatTex, float2(lerp_val, 0));
                 return float4(col.rgb, 1.f);
             }
             ENDCG
