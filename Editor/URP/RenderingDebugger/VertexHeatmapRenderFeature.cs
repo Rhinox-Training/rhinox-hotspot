@@ -18,7 +18,23 @@ namespace Hotspot.Editor
             public float GaussianBlurSigma = 1f;
             public uint AmountOfBlurIterations = 2;
 
-            public Texture2D HeatmapTexture;
+            public Texture2D HeatmapTexture
+            {
+                get => _heatmapTexture;
+                set
+                {
+                    if (_heatmapTexture != value)
+                    {
+                        if (value != null)
+                        {
+                            value.wrapMode = TextureWrapMode.Mirror;
+                            value.filterMode = FilterMode.Point;
+                        }
+                        _heatmapTexture = value;
+                    }
+                }
+            }
+            private Texture2D _heatmapTexture;
         }
 
         // Class representing a render pass for vertex heatmap
