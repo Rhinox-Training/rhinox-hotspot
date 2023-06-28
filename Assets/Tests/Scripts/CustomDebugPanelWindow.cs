@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -31,3 +32,4 @@ public class CustomDebugPanelWindow : EditorWindow
         mainLight.enabled = evt.newValue;
     }
 }
+#endif
