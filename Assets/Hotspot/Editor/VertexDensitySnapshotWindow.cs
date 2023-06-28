@@ -1,13 +1,11 @@
 using System.Collections.Generic;
 using System.Linq;
-using Rhinox.GUIUtils;
 using Rhinox.GUIUtils.Editor;
 using Rhinox.Lightspeed;
 using Rhinox.Magnus;
 using Rhinox.Perceptor;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Profiling;
 
 namespace Hotspot.Editor
 {
@@ -27,7 +25,7 @@ namespace Hotspot.Editor
         private int _itemsPerPage = 10;
         private float _minDensity = 0.1f;
         private float _maxDensity = 100.0f;
-        private DistributionInfo _distributionInfo = new DistributionInfo() {Min = 0.0f, Max = 100.0f};
+        private DistributionInfo _distributionInfo = new DistributionInfo() { Min = 0.0f, Max = 100.0f };
 
         [MenuItem(HotspotWindowHelper.ANALYSIS_PREFIX + "Vertex Density Snapshot", false, 1500)]
         public static void ShowWindow()
@@ -35,6 +33,7 @@ namespace Hotspot.Editor
             var win = GetWindow(typeof(VertexDensitySnapshotWindow));
             win.titleContent = new GUIContent("Vertex Pixel Density Snapshot");
         }
+        
 
         protected override void Initialize()
         {
@@ -74,30 +73,35 @@ namespace Hotspot.Editor
             {
                 TakeSnapshot();
             }
+
             CustomEditorGUI.Title("Distribution");
             if (_allDensityValues != null)
             {
-                GUILayout.BeginHorizontal( EditorStyles.helpBox );
+                if (_allDensityValues.Count > 0)
                 {
-                    GUILayout.Space(24.0f);
-                    GUIChartEditor.BeginChart(10, 100, 100, 200, Color.black,
-                        GUIChartEditorOptions.ChartBounds(0.0f, 1.0f, 0.0f, _allDensityValues.Count / 2.0f),
-                        GUIChartEditorOptions.SetOrigin(ChartOrigins.BottomLeft),
-                        GUIChartEditorOptions.ShowAxes(Color.white),
-                        GUIChartEditorOptions.ShowGrid(0.1f, _allDensityValues.Count / 20.0f, Color.gray, true)
-                        /*,GUIChartEditorOptions.ShowLabels("0.##", 1f, 1f, -0.1f, 1f, -0.075f, 1f)*/);
-                    _distributionInfo = GUIChartEditor.PushDataToDistribution(_allDensityValues.Values, Color.red);
-                    GUIChartEditor.EndChart();
-                    GUILayout.Space(4.0f);
+                    GUILayout.BeginHorizontal(EditorStyles.helpBox);
+                    {
+                        GUILayout.Space(24.0f);
+                        GUIChartEditor.BeginChart(10, 100, 100, 200, Color.black,
+                            GUIChartEditorOptions.ChartBounds(0.0f, 1.0f, 0.0f, _allDensityValues.Count / 2.0f),
+                            GUIChartEditorOptions.SetOrigin(ChartOrigins.BottomLeft),
+                            GUIChartEditorOptions.ShowAxes(Color.white),
+                            GUIChartEditorOptions.ShowGrid(0.1f, _allDensityValues.Count / 20.0f, Color.gray, true)
+                            /*,GUIChartEditorOptions.ShowLabels("0.##", 1f, 1f, -0.1f, 1f, -0.075f, 1f)*/);
+                        _distributionInfo = GUIChartEditor.PushDataToDistribution(_allDensityValues.Values, Color.red);
+                        GUIChartEditor.EndChart();
+                        GUILayout.Space(4.0f);
+                    }
+                    GUILayout.EndHorizontal();
                 }
-                GUILayout.EndHorizontal();
             }
 
             GUILayout.BeginHorizontal();
             {
                 float oldMinDensity = _minDensity;
                 float oldMaxDensity = _maxDensity;
-                EditorGUILayout.MinMaxSlider("Filter View:", ref _minDensity, ref _maxDensity, Mathf.Max(_distributionInfo.Min, 0.0f), Mathf.Min(_distributionInfo.Max, 100.0f));
+                EditorGUILayout.MinMaxSlider("Filter View:", ref _minDensity, ref _maxDensity,
+                    Mathf.Max(_distributionInfo.Min, 0.0f), Mathf.Min(_distributionInfo.Max, 100.0f));
                 if (!oldMinDensity.LossyEquals(_minDensity) || !oldMaxDensity.LossyEquals(_maxDensity))
                 {
                     _filteredDensityValues.Clear();
@@ -106,7 +110,6 @@ namespace Hotspot.Editor
                         float density = _allDensityValues[r];
                         if (density >= _minDensity && density <= _maxDensity)
                             _filteredDensityValues.Add(r, density);
-                
                     }
                 }
             }
@@ -115,7 +118,6 @@ namespace Hotspot.Editor
             {
                 _pageableList.DoLayoutList(GUIContent.none);
             }
-
         }
 
         private void TakeSnapshot()
@@ -144,7 +146,8 @@ namespace Hotspot.Editor
             else
                 mainCamera = SceneView.GetAllSceneCameras()[0];
 
-            var visibleRenderersInView = _renderers.Where(x => x != null && x.isVisible && x.IsWithinFrustum(mainCamera));
+            var visibleRenderersInView =
+                _renderers.Where(x => x != null && x.isVisible && x.IsWithinFrustum(mainCamera));
             _allDensityValues = new Dictionary<Renderer, float>();
             _filteredDensityValues = new Dictionary<Renderer, float>();
             foreach (var r in visibleRenderersInView)
@@ -153,7 +156,6 @@ namespace Hotspot.Editor
                 if (density > _minDensity)
                     _filteredDensityValues.Add(r, density);
                 _allDensityValues.Add(r, density);
-                
             }
 
             // Fetch the visible renderers and the density values
@@ -165,15 +167,17 @@ namespace Hotspot.Editor
             //     .OrderByDescending(x => x.Value));
             //
             // _filteredDensityValues = value.ToDictionary(x => x.Key, x => x.Value);
-            
+
             // Create the pageable list
-            _pageableList = new PageableReorderableList(_filteredDensityValues.Select(x => x).OrderByDescending(x => x.Value).ToList())
-            {
-                MaxItemsPerPage = _itemsPerPage,
-                DisplayAdd = false,
-                DisplayRemove = false,
-                Draggable = false
-            };
+            _pageableList =
+                new PageableReorderableList(_filteredDensityValues.Select(x => x).OrderByDescending(x => x.Value)
+                    .ToList())
+                {
+                    MaxItemsPerPage = _itemsPerPage,
+                    DisplayAdd = false,
+                    DisplayRemove = false,
+                    Draggable = false
+                };
             _pageableList.drawElementCallback += OnDrawElement;
         }
 
